@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MIRU — Curated Objects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #f5f2ed;
+    --bg2: #ede9e2;
+    --ink: #1a1714;
+    --ink-soft: #5a5550;
+    --gold: #b8924a;
+    --gold-light: #d4aa6e;
+    --cream: #faf8f4;
+    --border: #d8d2c8;
+    --red: #c0392b;
+    --green: #2e7d4f;
+  }
+  
+  html[data-theme='dark'] {
+    --bg: #111110;
+    --bg2: #1a1a19;
+    --ink: #f0ebe1;
+    --ink-soft: #a8a093;
+    --gold: #c39c56;
+    --gold-light: #dfb97a;
+    --cream: #181716;
+    --border: #33302b;
+    --red: #d35446;
+    --green: #41a56b;
+  }
+  
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Mono',monospace; background:var(--bg); color:var(--ink); min-height:100vh; transition: background-color 0.4s ease, color 0.4s ease; }
+  h1,h2,h3,h4 { font-family:'Cormorant Garamond',serif; font-weight:300; }
+
+  /* NAV */
+  nav { position:sticky; top:0; z-index:100; background:var(--cream); border-bottom:1px solid var(--border); padding:0 2rem; display:flex; align-items:center; justify-content:space-between; height:64px; transition: background-color 0.4s ease, border-color 0.4s ease; }
+  .nav-logo { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:400; letter-spacing:0.15em; color:var(--ink); text-decoration:none; }
+  .nav-logo span { color:var(--gold); }
+  .nav-links { display:flex; gap:2rem; align-items:center; }
+  .nav-links a { text-decoration:none; color:var(--ink-soft); font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; transition:color .2s; cursor:pointer; }
+  .nav-links a:hover { color:var(--gold); }
+  .cart-btn { position:relative; background:none; border:1px solid var(--border); padding:8px 16px; cursor:pointer; font-family:'DM Mono',monospace; font-size:0.7rem; letter-spacing:0.1em; color:var(--ink); transition:all .2s; }
+  .cart-btn:hover { background:var(--ink); color:var(--cream); }
+  .cart-badge { position:absolute; top:-6px; right:-6px; background:var(--gold); color:#fff; border-radius:50%; width:18px; height:18px; font-size:0.65rem; display:flex; align-items:center; justify-content:center; }
+
+  /* HERO */
+  .hero { padding:6rem 2rem 4rem; max-width:1200px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:4rem; align-items:center; }
+  .hero-text h1 { font-size:5rem; line-height:1; margin-bottom:1.5rem; }
+  .hero-text h1 em { color:var(--gold); font-style:italic; }
+  .hero-text p { color:var(--ink-soft); font-size:0.8rem; line-height:2; letter-spacing:0.05em; max-width:380px; margin-bottom:2rem; }
+  .hero-image { position:relative; }
+  .hero-image img { width:100%; aspect-ratio:3/4; object-fit:cover; filter:sepia(10%) brightness(0.95); }
+  .hero-tag { position:absolute; bottom:2rem; right:-1rem; background:var(--gold); color:#fff; padding:12px 20px; font-size:0.7rem; letter-spacing:0.1em; writing-mode:vertical-rl; }
+  .btn { display:inline-block; padding:14px 32px; font-family:'DM Mono',monospace; font-size:0.75rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; border:none; transition:all .25s; text-decoration:none; }
+  .btn-primary { background:var(--ink); color:var(--cream); }
+  .btn-primary:hover { background:var(--gold); }
+  .btn-outline { background:transparent; color:var(--ink); border:1px solid var(--ink); }
+  .btn-outline:hover { background:var(--ink); color:var(--cream); }
+  .btn-sm { padding:8px 20px; font-size:0.7rem; }
+
+  /* PRODUCTS */
+  .section { max-width:1200px; margin:0 auto; padding:4rem 2rem; }
+  .section-header { display:flex; align-items:baseline; justify-content:space-between; margin-bottom:3rem; border-bottom:1px solid var(--border); padding-bottom:1rem; }
+  .section-header h2 { font-size:2.5rem; }
+  .filters { display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:2rem; }
+  .filter-btn { padding:6px 16px; font-size:0.65rem; letter-spacing:0.1em; cursor:pointer; border:1px solid var(--border); background:transparent; font-family:'DM Mono',monospace; transition:all .2s; }
+  .filter-btn.active { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+  .search-bar { display:flex; gap:1rem; margin-bottom:2rem; align-items:center; }
+  .search-bar input { flex:1; padding:10px 16px; border:1px solid var(--border); background:var(--cream); font-family:'DM Mono',monospace; font-size:0.75rem; outline:none; }
+  .search-bar input:focus { border-color:var(--gold); }
+  .search-bar select { padding:10px 16px; border:1px solid var(--border); background:var(--cream); font-family:'DM Mono',monospace; font-size:0.75rem; cursor:pointer; outline:none; }
+  .products-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:2rem; }
+  .product-card { background:var(--cream); border:1px solid var(--border); overflow:hidden; transition:transform .3s, box-shadow .3s, background-color 0.4s ease, border-color 0.4s ease; cursor:pointer; }
+  .product-card:hover { transform:translateY(-4px); box-shadow:0 12px 40px rgba(0,0,0,0.1); }
+  .product-img { position:relative; overflow:hidden; aspect-ratio:1; }
+  .product-img img { width:100%; height:100%; object-fit:cover; transition:transform .5s; filter:sepia(8%) brightness(0.97); }
+  .product-card:hover .product-img img { transform:scale(1.05); }
+  .product-overlay { position:absolute; inset:0; background:rgba(26,23,20,0.5); opacity:0; display:flex; align-items:center; justify-content:center; transition:opacity .3s; }
+  .product-card:hover .product-overlay { opacity:1; }
+  .product-info { padding:1.25rem; }
+  .product-category { font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase; color:var(--gold); margin-bottom:0.4rem; }
+  .product-name { font-family:'Cormorant Garamond',serif; font-size:1.25rem; margin-bottom:0.5rem; }
+  .product-desc { font-size:0.7rem; color:var(--ink-soft); line-height:1.6; margin-bottom:1rem; }
+  .product-footer { display:flex; align-items:center; justify-content:space-between; }
+  .product-price { font-family:'Cormorant Garamond',serif; font-size:1.4rem; color:var(--ink); }
+  .add-btn { padding:8px 14px; font-size:0.65rem; letter-spacing:0.08em; cursor:pointer; background:var(--ink); color:var(--cream); border:none; font-family:'DM Mono',monospace; transition:background .2s; }
+  .add-btn:hover { background:var(--gold); }
+
+  /* CART DRAWER */
+  .drawer-overlay { position:fixed; inset:0; background:rgba(26,23,20,0.4); z-index:200; opacity:0; pointer-events:none; transition:opacity .3s; }
+  .drawer-overlay.open { opacity:1; pointer-events:all; }
+  .cart-drawer { position:fixed; right:0; top:0; bottom:0; width:400px; background:var(--cream); z-index:201; transform:translateX(100%); transition:transform .35s cubic-bezier(.16,1,.3,1); display:flex; flex-direction:column; border-left:1px solid var(--border); }
+  .cart-drawer.open { transform:translateX(0); }
+  .drawer-header { padding:2rem; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .drawer-header h3 { font-size:1.8rem; }
+  .close-btn { background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--ink-soft); }
+  .drawer-items { flex:1; overflow-y:auto; padding:1.5rem; display:flex; flex-direction:column; gap:1.25rem; }
+  .cart-item { display:flex; gap:1rem; padding-bottom:1.25rem; border-bottom:1px solid var(--border); }
+  .cart-item img { width:70px; height:70px; object-fit:cover; border:1px solid var(--border); }
+  .cart-item-info { flex:1; }
+  .cart-item-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; margin-bottom:0.25rem; }
+  .cart-item-price { font-size:0.75rem; color:var(--gold); margin-bottom:0.5rem; }
+  .qty-controls { display:flex; align-items:center; gap:0.75rem; }
+  .qty-btn { width:24px; height:24px; border:1px solid var(--border); background:none; cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; }
+  .qty-btn:hover { background:var(--ink); color:var(--cream); }
+  .qty-num { font-size:0.8rem; min-width:20px; text-align:center; }
+  .remove-btn { background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; }
+  .remove-btn:hover { color:var(--red); }
+  .drawer-footer { padding:2rem; border-top:1px solid var(--border); }
+  .cart-total { display:flex; justify-content:space-between; margin-bottom:1.5rem; }
+  .cart-total span:first-child { font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-soft); }
+  .cart-total span:last-child { font-family:'Cormorant Garamond',serif; font-size:1.5rem; }
+  .empty-cart { text-align:center; padding:3rem; color:var(--ink-soft); }
+  .empty-cart p { font-size:0.8rem; letter-spacing:0.05em; }
+
+  /* MODAL / AUTH */
+  .modal-overlay { position:fixed; inset:0; background:rgba(26,23,20,0.5); z-index:300; display:flex; align-items:center; justify-content:center; }
+  .modal { background:var(--cream); width:440px; max-width:90vw; border:1px solid var(--border); padding:3rem; position:relative; }
+  .modal h2 { font-size:2.5rem; margin-bottom:0.5rem; }
+  .modal-sub { font-size:0.7rem; color:var(--ink-soft); letter-spacing:0.08em; margin-bottom:2rem; }
+  .form-field { margin-bottom:1.25rem; }
+  .form-field label { display:block; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:0.4rem; }
+  .form-field input, .form-field textarea { width:100%; padding:10px 14px; border:1px solid var(--border); background:var(--bg); font-family:'DM Mono',monospace; font-size:0.8rem; outline:none; transition:border-color .2s; }
+  .form-field input:focus, .form-field textarea:focus { border-color:var(--gold); }
+  .form-field textarea { resize:vertical; min-height:100px; }
+  .form-error { color:var(--red); font-size:0.7rem; margin-top:0.4rem; }
+  .form-success { color:var(--green); font-size:0.75rem; letter-spacing:0.05em; padding:12px; background:#f0faf4; border:1px solid #a8d5b5; margin-bottom:1rem; }
+  .modal-switch { margin-top:1.5rem; font-size:0.7rem; color:var(--ink-soft); text-align:center; }
+  .modal-switch button { background:none; border:none; color:var(--gold); cursor:pointer; font-family:'DM Mono',monospace; font-size:0.7rem; text-decoration:underline; }
+
+  /* CONTACT */
+  .contact-section { background:var(--bg2); }
+  .contact-inner { max-width:1200px; margin:0 auto; padding:5rem 2rem; display:grid; grid-template-columns:1fr 1fr; gap:5rem; align-items:start; }
+  .contact-info h2 { font-size:3rem; margin-bottom:1rem; }
+  .contact-info p { font-size:0.75rem; color:var(--ink-soft); line-height:2; margin-bottom:2rem; }
+  .contact-detail { margin-bottom:1rem; }
+  .contact-detail span { font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:0.2rem; }
+  .contact-detail p { font-size:0.8rem; color:var(--ink); }
+
+  /* CHECKOUT MODAL */
+  .checkout-modal { width: 600px; max-width: 95vw; background: var(--cream); border: 1px solid var(--border); padding: 3rem; position: relative; max-height: 90vh; overflow-y: auto; }
+  .checkout-split { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.5rem; }
+  .checkout-section h4 { font-family: 'DM Mono', monospace; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem; color: var(--gold); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  .radio-group { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .radio-label { display: flex; align-items: center; gap: 0.75rem; font-size: 0.8rem; cursor: pointer; padding: 12px; border: 1px solid var(--border); }
+  .radio-label:focus-within, .radio-label.selected { border-color: var(--gold); background: var(--bg2); }
+  .radio-input { appearance: none; width: 16px; height: 16px; border: 1px solid var(--ink-soft); border-radius: 50%; outline: none; transition: 0.2s; position: relative; }
+  .radio-input:checked { border-color: var(--gold); }
+  .radio-input:checked::after { content: ''; position: absolute; inset: 3px; background: var(--gold); border-radius: 50%; }
+  .order-summary-box { background: var(--bg2); padding: 1.5rem; font-size: 0.8rem; margin-bottom: 2rem; }
+  .order-summary-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+  .order-summary-total { display: flex; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; }
+
+  /* FOOTER */
+  footer { background:var(--ink); color:var(--cream); padding:3rem 2rem; }
+  .footer-inner { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; }
+  .footer-logo { font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:var(--cream); }
+  .footer-logo span { color:var(--gold); }
+  .footer-copy { font-size:0.65rem; color:#888; letter-spacing:0.1em; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:2rem; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--cream); padding:12px 24px; font-size:0.75rem; letter-spacing:0.08em; opacity:0; transition:all .3s; z-index:400; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ORDERS PAGE */
+  .orders-section { max-width:800px; margin:0 auto; padding:4rem 2rem; }
+  .order-card { background:var(--cream); border:1px solid var(--border); padding:1.5rem; margin-bottom:1rem; }
+  .order-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+  .order-id { font-size:0.7rem; color:var(--gold); letter-spacing:0.1em; }
+  .order-status { padding:4px 12px; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; background:#e8f5ef; color:var(--green); }
+  .order-items { font-size:0.75rem; color:var(--ink-soft); margin-bottom:1rem; }
+  .order-total { font-family:'Cormorant Garamond',serif; font-size:1.4rem; }
+
+  @media(max-width:768px) {
+    .hero { grid-template-columns:1fr; padding:3rem 1rem 2rem; }
+    .hero-text h1 { font-size:3.5rem; }
+    .hero-image { display:none; }
+    .contact-inner { grid-template-columns:1fr; gap:2rem; }
+    .cart-drawer { width:100%; }
+    nav { padding:0 1rem; }
+    .nav-links a:not(:last-child) { display:none; }
+  }
+
+  .theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  .theme-toggle:hover {
+    background: var(--bg2);
+  }
+
+  @media(max-width:768px) {
+    .theme-toggle { margin-right: 1rem; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+const API = 'http://localhost:3001/api';
+
+// ── UTILITIES ────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function useApi(token) {
+  const headers = (extra={}) => ({ 'Content-Type':'application/json', ...(token ? {Authorization:`Bearer ${token}`} : {}), ...extra });
+  const get = (path) => fetch(API+path, {headers:headers()}).then(r=>r.json());
+  const post = (path, body) => fetch(API+path, {method:'POST', headers:headers(), body:JSON.stringify(body)}).then(r=>r.json());
+  const put = (path, body) => fetch(API+path, {method:'PUT', headers:headers(), body:JSON.stringify(body)}).then(r=>r.json());
+  const del = (path) => fetch(API+path, {method:'DELETE', headers:headers()}).then(r=>r.json());
+  return { get, post, put, del };
+}
+
+// ── NAV ──────────────────────────────────────────────────────
+function Nav({ user, cartCount, onCartOpen, onAuthOpen, onLogout, page, setPage, theme, toggleTheme }) {
+  return (
+    <nav>
+      <a className="nav-logo" onClick={()=>setPage('home')} style={{cursor:'pointer'}}>MIRU<span>.</span></a>
+      <div className="nav-links">
+        <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle dark mode">
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
+        <a onClick={()=>setPage('home')}>Shop</a>
+        <a onClick={()=>setPage('contact')}>Contact</a>
+        {user ? <>
+          <a onClick={()=>setPage('orders')}>Orders</a>
+          <a onClick={onLogout}>Sign out</a>
+        </> : <a onClick={onAuthOpen}>Sign in</a>}
+        <button className="cart-btn" onClick={onCartOpen}>
+          Cart
+          {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+        </button>
+      </div>
+    </nav>
+  );
+}
+
+// ── HERO ─────────────────────────────────────────────────────
+function Hero({ onShop }) {
+  return (
+    <div className="hero">
+      <div className="hero-text">
+        <h1>Curated<br/><em>Objects</em><br/>for Living</h1>
+        <p>We source exceptional everyday objects — things made to last, designed with intention, chosen with care. Each piece has a story.</p>
+        <button className="btn btn-primary" onClick={onShop}>Explore Collection</button>
+      </div>
+      <div className="hero-image">
+        <img src="https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600" alt="Interior"/>
+        <div className="hero-tag">New Arrivals</div>
+      </div>
+    </div>
+  );
+}
+
+// ── PRODUCTS ─────────────────────────────────────────────────
+function Products({ token, onAddToCart, onAuthRequired }) {
+  const [products, setProducts] = useState([]);
+  const [category, setCategory] = useState('All');
+  const [search, setSearch] = useState('');
+  const [sort, setSort] = useState('default');
+  const [loading, setLoading] = useState(true);
+  const api = useApi(token);
+
+  const cats = ['All','Accessories','Home','Kitchen','Apparel'];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const params = new URLSearchParams({ category, search, sort }).toString();
+    const data = await api.get(`/products?${params}`);
+    setProducts(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, [category, search, sort]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleAdd = async (product) => {
+    if (!token) { onAuthRequired(); return; }
+    await onAddToCart(product.id);
+    showToast(`${product.name} added to cart`);
+  };
+
+  return (
+    <div className="section" id="shop">
+      <div className="section-header">
+        <h2>The Collection</h2>
+        <span style={{fontSize:'0.7rem',color:'var(--ink-soft)',letterSpacing:'0.1em'}}>{products.length} objects</span>
+      </div>
+      <div className="search-bar">
+        <input placeholder="Search objects..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        <select value={sort} onChange={e=>setSort(e.target.value)}>
+          <option value="default">Featured</option>
+          <option value="price_asc">Price ↑</option>
+          <option value="price_desc">Price ↓</option>
+        </select>
+      </div>
+      <div className="filters">
+        {cats.map(c => <button key={c} className={`filter-btn ${category===c?'active':''}`} onClick={()=>setCategory(c)}>{c}</button>)}
+      </div>
+      {loading ? <p style={{textAlign:'center',padding:'3rem',color:'var(--ink-soft)',fontSize:'0.8rem'}}>Loading collection...</p> : (
+        <div className="products-grid">
+          {products.map(p => (
+            <div className="product-card" key={p.id}>
+              <div className="product-img">
+                <img src={p.image} alt={p.name} loading="lazy"/>
+                <div className="product-overlay">
+                  <button className="btn btn-sm" style={{background:'var(--cream)',color:'var(--ink)'}} onClick={()=>handleAdd(p)}>Add to Cart</button>
+                </div>
+              </div>
+              <div className="product-info">
+                <div className="product-category">{p.category}</div>
+                <div className="product-name">{p.name}</div>
+                <div className="product-desc">{p.description}</div>
+                <div className="product-footer">
+                  <span className="product-price">${p.price}</span>
+                  <button className="add-btn" onClick={()=>handleAdd(p)}>+ Add</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── CART DRAWER ───────────────────────────────────────────────
+function CartDrawer({ open, onClose, token, cart, onCartChange, onCheckout }) {
+  const api = useApi(token);
+
+  const updateQty = async (item, delta) => {
+    await api.put(`/cart/${item.id}`, { quantity: item.quantity + delta });
+    onCartChange();
+  };
+  const remove = async (item) => {
+    await api.del(`/cart/${item.id}`);
+    onCartChange();
+    showToast('Item removed');
+  };
+  const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  return (
+    <>
+      <div className={`drawer-overlay ${open?'open':''}`} onClick={onClose}/>
+      <div className={`cart-drawer ${open?'open':''}`}>
+        <div className="drawer-header">
+          <h3>Your Cart</h3>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
+        <div className="drawer-items">
+          {cart.length === 0 ? (
+            <div className="empty-cart">
+              <p style={{fontSize:'2rem',marginBottom:'1rem'}}>∅</p>
+              <p>Your cart is empty.<br/>Add some objects.</p>
+            </div>
+          ) : cart.map(item => (
+            <div className="cart-item" key={item.id}>
+              <img src={item.image} alt={item.name}/>
+              <div className="cart-item-info">
+                <div className="cart-item-name">{item.name}</div>
+                <div className="cart-item-price">${item.price}</div>
+                <div className="qty-controls">
+                  <button className="qty-btn" onClick={()=>updateQty(item,-1)}>−</button>
+                  <span className="qty-num">{item.quantity}</span>
+                  <button className="qty-btn" onClick={()=>updateQty(item,1)}>+</button>
+                  <button className="remove-btn" onClick={()=>remove(item)}>remove</button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {cart.length > 0 && (
+          <div className="drawer-footer">
+            <div className="cart-total">
+              <span>Total</span>
+              <span>${total.toFixed(2)}</span>
+            </div>
+            <button className="btn btn-primary" style={{width:'100%'}} onClick={onCheckout}>Place Order</button>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ── CHECKOUT MODAL ────────────────────────────────────────────
+function CheckoutModal({ open, onClose, cart, submitCheckout }) {
+  const [address, setAddress] = useState({ street: '', city: '', state: '', zip: '' });
+  const [payment, setPayment] = useState('credit_card');
+  const [paymentDetails, setPaymentDetails] = useState({ cardNumber: '', expiry: '', cvv: '', upiId: '' });
+  const [loading, setLoading] = useState(false);
+  const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+
+  if (!open) return null;
+
+  const handleCheckout = async () => {
+    if (!address.street || !address.city || !address.state || !address.zip) {
+      showToast('Please complete all shipping address fields.');
+      return;
+    }
+    if (payment === 'credit_card' && (!paymentDetails.cardNumber || !paymentDetails.expiry || !paymentDetails.cvv)) {
+      showToast('Please complete all credit card details.');
+      return;
+    }
+    if (payment === 'upi' && !paymentDetails.upiId) {
+      showToast('Please enter your UPI ID.');
+      return;
+    }
+    setLoading(true);
+    // Simulate processing delay
+    await new Promise(r => setTimeout(r, 1200));
+    await submitCheckout({ shipping_address: address, payment_method: payment, payment_details: paymentDetails });
+    setLoading(false);
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="checkout-modal">
+        <button className="close-btn" onClick={onClose} style={{position:'absolute', top:'1.5rem', right:'1.5rem'}}>×</button>
+        <h2 style={{fontFamily: "'Cormorant Garamond', serif", fontSize:'2.5rem'}}>Secure Checkout</h2>
+        
+        <div className="order-summary-box">
+          <div style={{marginBottom:'1rem', fontSize:'0.7rem', textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--gold)'}}>Order Summary</div>
+            {cart.map(item => (
+              <div className="order-summary-row" key={item.id}>
+                <span>{item.quantity} × {item.name}</span>
+                <span>${(item.price * item.quantity).toFixed(2)}</span>
+              </div>
+            ))}
+          <div className="order-summary-total">
+            <span>Total</span>
+            <span>${total.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="checkout-split">
+          <div className="checkout-section">
+            <h4>Shipping Address</h4>
+            <div className="form-field">
+              <input value={address.street} onChange={e=>setAddress({...address, street: e.target.value})} placeholder="Street Address" />
+            </div>
+            <div className="form-field">
+              <input value={address.city} onChange={e=>setAddress({...address, city: e.target.value})} placeholder="City" />
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1rem'}}>
+              <div className="form-field">
+                <input value={address.state} onChange={e=>setAddress({...address, state: e.target.value})} placeholder="State" />
+              </div>
+              <div className="form-field">
+                <input value={address.zip} onChange={e=>setAddress({...address, zip: e.target.value})} placeholder="ZIP Code" />
+              </div>
+            </div>
+          </div>
+
+          <div className="checkout-section">
+            <h4>Payment Method</h4>
+            <div className="radio-group">
+              <label className={`radio-label ${payment==='credit_card'?'selected':''}`}>
+                <input type="radio" className="radio-input" name="payment" checked={payment==='credit_card'} onChange={()=>setPayment('credit_card')} />
+                Credit Card
+              </label>
+              {payment === 'credit_card' && (
+                <div style={{padding: '1rem', background: 'var(--bg2)', marginLeft: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '-0.75rem', marginBottom: '0.75rem'}}>
+                  <input style={{padding: '0.65rem', border: '1px solid var(--border)', background: 'transparent', width: '100%', boxSizing: 'border-box', outline: 'none'}} placeholder="Card Number" value={paymentDetails.cardNumber} onChange={e=>setPaymentDetails({...paymentDetails, cardNumber: e.target.value})} />
+                  <div style={{display: 'flex', gap: '0.5rem'}}>
+                    <input style={{padding: '0.65rem', border: '1px solid var(--border)', background: 'transparent', width: '50%', boxSizing: 'border-box', outline: 'none'}} placeholder="MM/YY" value={paymentDetails.expiry} onChange={e=>setPaymentDetails({...paymentDetails, expiry: e.target.value})} />
+                    <input style={{padding: '0.65rem', border: '1px solid var(--border)', background: 'transparent', width: '50%', boxSizing: 'border-box', outline: 'none'}} placeholder="CVV" value={paymentDetails.cvv} onChange={e=>setPaymentDetails({...paymentDetails, cvv: e.target.value})} />
+                  </div>
+                </div>
+              )}
+              
+              <label className={`radio-label ${payment==='upi'?'selected':''}`}>
+                <input type="radio" className="radio-input" name="payment" checked={payment==='upi'} onChange={()=>setPayment('upi')} />
+                UPI (India)
+              </label>
+              {payment === 'upi' && (
+                <div style={{padding: '1rem', background: 'var(--bg2)', marginLeft: '1.5rem', marginTop: '-0.75rem', marginBottom: '0.75rem'}}>
+                  <input style={{padding: '0.65rem', border: '1px solid var(--border)', background: 'transparent', width: '100%', boxSizing: 'border-box', outline: 'none'}} placeholder="UPI ID (e.g. username@bank)" value={paymentDetails.upiId} onChange={e=>setPaymentDetails({...paymentDetails, upiId: e.target.value})} />
+                </div>
+              )}
+
+              <label className={`radio-label ${payment==='paypal'?'selected':''}`}>
+                <input type="radio" className="radio-input" name="payment" checked={payment==='paypal'} onChange={()=>setPayment('paypal')} />
+                PayPal
+              </label>
+              <label className={`radio-label ${payment==='cod'?'selected':''}`}>
+                <input type="radio" className="radio-input" name="payment" checked={payment==='cod'} onChange={()=>setPayment('cod')} />
+                Cash on Delivery
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button className="btn btn-primary" style={{width:'100%', marginTop:'1rem', padding:'1rem', fontSize:'1rem'}} onClick={handleCheckout} disabled={loading}>
+          {loading ? 'Processing...' : `Pay $${total.toFixed(2)}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── AUTH MODAL ────────────────────────────────────────────────
+function AuthModal({ onClose, onLogin }) {
+  const [mode, setMode] = useState('login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const api = useApi(null);
+
+  const submit = async () => {
+    setError(''); setLoading(true);
+    const body = mode === 'register' ? {name,email,password} : {email,password};
+    const data = await api.post(`/auth/${mode}`, body);
+    setLoading(false);
+    if (data.error) { setError(data.error); return; }
+    onLogin(data.token, data.user);
+    showToast(`Welcome, ${data.user.name}!`);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal">
+        <h2>{mode==='login'?'Sign In':'Create Account'}</h2>
+        <p className="modal-sub">{mode==='login'?'Welcome back to MIRU.':'Join MIRU to start collecting.'}</p>
+        {error && <div className="form-error" style={{marginBottom:'1rem',padding:'8px',background:'#fdf0ef'}}>{error}</div>}
+        {mode==='register' && (
+          <div className="form-field">
+            <label>Full Name</label>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name"/>
+          </div>
+        )}
+        <div className="form-field">
+          <label>Email</label>
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="hello@example.com"/>
+        </div>
+        <div className="form-field">
+          <label>Password</label>
+          <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="••••••••" onKeyDown={e=>e.key==='Enter'&&submit()}/>
+        </div>
+        <button className="btn btn-primary" style={{width:'100%'}} onClick={submit} disabled={loading}>
+          {loading ? 'Loading...' : mode==='login' ? 'Sign In' : 'Create Account'}
+        </button>
+        <div className="modal-switch">
+          {mode==='login' ? <>No account? <button onClick={()=>setMode('register')}>Create one</button></>
+            : <>Already a member? <button onClick={()=>setMode('login')}>Sign in</button></>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── CONTACT ───────────────────────────────────────────────────
+function Contact() {
+  const [form, setForm] = useState({name:'',email:'',subject:'',message:''});
+  const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const api = useApi(null);
+
+  const submit = async () => {
+    setError(''); setSuccess(''); setLoading(true);
+    const data = await api.post('/contact', form);
+    setLoading(false);
+    if (data.error) { setError(data.error); return; }
+    setSuccess(data.message);
+    setForm({name:'',email:'',subject:'',message:''});
+  };
+
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+
+  return (
+    <div className="contact-section">
+      <div className="contact-inner">
+        <div className="contact-info">
+          <h2>Get in Touch</h2>
+          <p>We're a small team with strong opinions about beautiful things. Questions, custom orders, collaboration — we'd love to hear from you.</p>
+          <div className="contact-detail"><span>Email</span><p>hello@miru.co</p></div>
+          <div className="contact-detail"><span>Hours</span><p>Mon–Fri, 9am–6pm</p></div>
+          <div className="contact-detail"><span>Response time</span><p>Within 24 hours</p></div>
+        </div>
+        <div>
+          {success && <div className="form-success">{success}</div>}
+          {error && <div className="form-error" style={{marginBottom:'1rem'}}>{error}</div>}
+          <div className="form-field"><label>Name</label><input value={form.name} onChange={e=>set('name',e.target.value)} placeholder="Your name"/></div>
+          <div className="form-field"><label>Email</label><input type="email" value={form.email} onChange={e=>set('email',e.target.value)} placeholder="your@email.com"/></div>
+          <div className="form-field"><label>Subject</label><input value={form.subject} onChange={e=>set('subject',e.target.value)} placeholder="What's this about?"/></div>
+          <div className="form-field"><label>Message</label><textarea value={form.message} onChange={e=>set('message',e.target.value)} placeholder="Tell us..."/></div>
+          <button className="btn btn-primary" onClick={submit} disabled={loading}>{loading?'Sending...':'Send Message'}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ORDERS ────────────────────────────────────────────────────
+function Orders({ token }) {
+  const [orders, setOrders] = useState([]);
+  const api = useApi(token);
+  useEffect(() => { api.get('/orders').then(d => setOrders(Array.isArray(d) ? d : [])); }, []);
+  return (
+    <div className="orders-section">
+      <h2 style={{fontSize:'2.5rem',marginBottom:'2rem',borderBottom:'1px solid var(--border)',paddingBottom:'1rem'}}>Your Orders</h2>
+      {orders.length === 0 ? <p style={{color:'var(--ink-soft)',fontSize:'0.8rem',letterSpacing:'0.05em'}}>No orders yet. Start shopping!</p> : orders.map(o => {
+        let address = {};
+        let details = {};
+        try { address = JSON.parse(o.shipping_address || '{}'); } catch(e){}
+        try { details = JSON.parse(o.payment_details || '{}'); } catch(e){}
+        return (
+          <div className="order-card" key={o.id}>
+            <div className="order-header">
+              <div>
+                <div className="order-id">ORDER #{String(o.id).padStart(5,'0')}</div>
+                <div style={{fontSize:'0.7rem',color:'var(--ink-soft)',marginTop:'0.2rem'}}>{new Date(o.created_at).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}</div>
+              </div>
+              <span className="order-status">{o.status}</span>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'2rem', marginBottom:'1rem', paddingBottom:'1rem', borderBottom:'1px solid var(--border)'}}>
+              <div className="order-items">
+                <div style={{fontSize:'0.7rem', textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--gold)', marginBottom:'0.5rem'}}>Items</div>
+                {o.items.map((i,n) => <div key={n} style={{fontSize:'0.85rem', marginBottom:'0.3rem'}}>{i.quantity} × {i.name}</div>)}
+              </div>
+              <div style={{fontSize:'0.85rem'}}>
+                <div style={{fontSize:'0.7rem', textTransform:'uppercase', letterSpacing:'0.1em', color:'var(--gold)', marginBottom:'0.5rem'}}>Details</div>
+                {o.payment_method && <div style={{marginBottom:'0.3rem'}}><strong>Payment:</strong> {o.payment_method.replace('_', ' ').replace(/\b\w/g, c=>c.toUpperCase())}
+                {o.payment_method === 'credit_card' && details.cardNumber ? ` (ending in ${details.cardNumber.slice(-4)})` : ''}
+                {o.payment_method === 'upi' && details.upiId ? ` (${details.upiId})` : ''}
+                </div>}
+                {address.street && <div><strong>Shipping to:</strong><br/>{address.street}, {address.city}, {address.state} {address.zip}</div>}
+              </div>
+            </div>
+            <div className="order-total">${parseFloat(o.total).toFixed(2)}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── APP ───────────────────────────────────────────────────────
+function App() {
+  const [token, setToken] = useState(localStorage.getItem('miru_token'));
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('miru_user')||'null'));
+  const [theme, setTheme] = useState(localStorage.getItem('miru_theme') || 'light');
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [page, setPage] = useState('home');
+  const api = useApi(token);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    if (cartOpen || checkoutMode || authOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [cartOpen, checkoutMode, authOpen]);
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('miru_theme', nextTheme);
+  };
+
+  const loadCart = useCallback(async () => {
+    if (!token) { setCart([]); return; }
+    const data = await api.get('/cart');
+    setCart(Array.isArray(data) ? data : []);
+  }, [token]);
+
+  useEffect(() => { loadCart(); }, [loadCart]);
+
+  const handleLogin = (tok, usr) => {
+    setToken(tok); setUser(usr);
+    localStorage.setItem('miru_token', tok);
+    localStorage.setItem('miru_user', JSON.stringify(usr));
+  };
+  const handleLogout = () => {
+    setToken(null); setUser(null); setCart([]);
+    localStorage.removeItem('miru_token');
+    localStorage.removeItem('miru_user');
+    showToast('Signed out');
+    setPage('home');
+  };
+  const addToCart = async (productId) => {
+    await api.post('/cart', { product_id: productId });
+    loadCart();
+  };
+  const [checkoutMode, setCheckoutMode] = useState(false);
+
+  const startCheckout = () => {
+    setCheckoutMode(true);
+    setCartOpen(false);
+  };
+
+  const submitCheckoutFinal = async (checkoutData) => {
+    const data = await api.post('/orders', checkoutData);
+    if (data.error) { showToast('Error: '+data.error); return; }
+    setCart([]); 
+    setCheckoutMode(false);
+    showToast(`Order #${String(data.orderId).padStart(5,'0')} confirmed! Total: $${data.total.toFixed(2)}`);
+    setPage('orders');
+  };
+
+  const cartCount = cart.reduce((s,i)=>s+i.quantity, 0);
+
+  return (
+    <>
+      <Nav user={user} cartCount={cartCount} onCartOpen={()=>setCartOpen(true)} onAuthOpen={()=>setAuthOpen(true)} onLogout={handleLogout} page={page} setPage={setPage} theme={theme} toggleTheme={toggleTheme}/>
+      {page === 'home' && <>
+        <Hero onShop={()=>document.getElementById('shop')?.scrollIntoView({behavior:'smooth'})}/>
+        <Products token={token} onAddToCart={addToCart} onAuthRequired={()=>setAuthOpen(true)}/>
+        <Contact/>
+      </>}
+      {page === 'contact' && <Contact/>}
+      {page === 'orders' && token && <Orders token={token}/>}
+      {page === 'orders' && !token && <div style={{padding:'4rem',textAlign:'center'}}><p style={{fontSize:'0.8rem',color:'var(--ink-soft)'}}>Please sign in to view orders.</p></div>}
+
+      <footer>
+        <div className="footer-inner">
+          <div className="footer-logo">MIRU<span>.</span></div>
+          <div className="footer-copy">© 2024 MIRU — Curated Objects for Living</div>
+        </div>
+      </footer>
+
+      <CartDrawer open={cartOpen} onClose={()=>setCartOpen(false)} token={token} cart={cart} onCartChange={loadCart} onCheckout={startCheckout}/>
+      <CheckoutModal open={checkoutMode} onClose={()=>setCheckoutMode(false)} cart={cart} submitCheckout={submitCheckoutFinal} />
+      {authOpen && <AuthModal onClose={()=>setAuthOpen(false)} onLogin={handleLogin}/>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
