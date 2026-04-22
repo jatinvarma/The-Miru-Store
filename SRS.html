@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Software Requirements Specification - MIRU</title>
+<style>
+    :root {
+        --primary: #121212;
+        --secondary: #555;
+        --light: #f9f9f9;
+        --border: #eaeaea;
+        --accent: #2c3e50;
+    }
+    body {
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        line-height: 1.7;
+        color: var(--primary);
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f5;
+    }
+    .wrapper {
+        max-width: 900px;
+        margin: 40px auto;
+        background: white;
+        padding: 60px 80px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border-radius: 8px;
+    }
+    .cover-page {
+        text-align: center;
+        padding: 80px 0;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 40px;
+    }
+    .title-doc {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: var(--primary);
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    .title-project {
+        font-size: 1.8rem;
+        color: var(--accent);
+        margin-bottom: 40px;
+    }
+    h1 {
+        font-size: 2.2rem;
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 10px;
+        margin-top: 50px;
+        color: var(--primary);
+        page-break-before: auto;
+    }
+    h2 {
+        font-size: 1.6rem;
+        color: var(--accent);
+        margin-top: 30px;
+    }
+    h3 {
+        font-size: 1.3rem;
+        margin-top: 20px;
+        color: var(--secondary);
+    }
+    p, li {
+        font-size: 1.1rem;
+        color: #333;
+    }
+    ul {
+        margin-bottom: 20px;
+        padding-left: 20px;
+    }
+    ul li {
+        margin-bottom: 8px;
+    }
+    code {
+        background-color: #f1f1f1;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: "Cascadia Code", "Fira Code", Consolas, monospace;
+        font-size: 0.9em;
+        color: #d63384;
+    }
+    .toc {
+        background: var(--light);
+        padding: 30px;
+        border-radius: 8px;
+        margin: 40px 0;
+    }
+    .toc h2 {
+        margin-top: 0;
+        border-bottom: none;
+    }
+    .toc ol {
+        font-size: 1.1rem;
+        line-height: 2;
+    }
+    .toc a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .toc a:hover {
+        text-decoration: underline;
+        color: var(--accent);
+    }
+    @media print {
+        body {
+            background-color: white;
+        }
+        .wrapper {
+            box-shadow: none;
+            margin: 0;
+            padding: 0;
+            max-width: 100%;
+        }
+        h1 {
+            page-break-after: avoid;
+        }
+    }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+    <!-- Cover Page Header -->
+    <div class="cover-page">
+        <div class="title-doc">Software Requirements Specification</div>
+        <div class="title-project">MIRU E-commerce Store</div>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+        <h2>Table of Contents</h2>
+        <ol>
+            <li><a href="#title">Title</a></li>
+            <li><a href="#team">Development Team</a></li>
+            <li><a href="#intro">Introduction</a></li>
+            <li><a href="#scope">Scope</a></li>
+            <li><a href="#functional">Functional Requirements</a></li>
+            <li><a href="#nonfunctional">Non-Functional Requirements</a></li>
+            <li><a href="#constraints">Constraints</a></li>
+            <li><a href="#acceptance">Acceptance Criteria</a></li>
+            <li><a href="#ui">User Interface Requirements</a></li>
+            <li><a href="#usecases">Use Cases</a></li>
+            <li><a href="#data">Data Requirements</a></li>
+            <li><a href="#architecture">System Architecture</a></li>
+            <li><a href="#technical">Technical Requirements</a></li>
+            <li><a href="#references">References</a></li>
+        </ol>
+    </div>
+
+    <!-- Section 1 -->
+    <h1 id="title">1. Title</h1>
+    <p><strong>MIRU &mdash; Curated Objects E-commerce Store</strong></p>
+
+    <!-- Section 2 -->
+    <h1 id="team">2. Development Team</h1>
+    <p>The core development team for the project consists of:</p>
+    <ul>
+        <li><strong>Syed baba</strong> (Team Leader)</li>
+        <li><strong>Jatin</strong> (Team Member)</li>
+    </ul>
+
+    <!-- Section 3 -->
+    <h1 id="intro">3. Introduction</h1>
+    <p>The MIRU E-commerce Store is a full-stack, web-based platform tailored exclusively for curated objects, delivering a refined editorial aesthetic. The proposed system aims to provide users with an intuitive, minimalist interface for discovering and purchasing products online.</p>
+    <p>The core problem it aims to solve is the clutter and complexity found in traditional e-commerce platforms by prioritizing clean design and zero-friction navigation. Its main objectives include enabling seamless browsing, enforcing secure user authentication, providing persistent cart management, and streamlining reliable order processing.</p>
+
+    <!-- Section 4 -->
+    <h1 id="scope">4. Scope</h1>
+    <p><strong>Included Features:</strong></p>
+    <ul>
+        <li>User registration and login utilizing secure JWT sessions.</li>
+        <li>Full product catalog display with categorized filtering, free-text search, and dynamic price sorting.</li>
+        <li>A persistent shopping cart tied to individual user identities in the database.</li>
+        <li>A comprehensive checkout process resulting in logged order history.</li>
+        <li>A contact system for direct customer inquiries.</li>
+    </ul>
+    <p><strong>Out of Scope:</strong></p>
+    <ul>
+        <li>Active integration with live external payment gateways (e.g., Stripe, PayPal).</li>
+        <li>A comprehensive administrative web dashboard for live, on-the-fly inventory or user management.</li>
+        <li>Automated shipping tracking or multi-warehouse logistics handling.</li>
+    </ul>
+
+    <!-- Section 5 -->
+    <h1 id="functional">5. Functional Requirements</h1>
+    <ul>
+        <li><strong>FR1 - User Authentication:</strong> The system must allow new users to register, existing users to log in with an email/password combination, and assign a stateless JSON Web Token (JWT) to secure user sessions.</li>
+        <li><strong>FR2 - Catalog Management:</strong> The system must fetch and display the product listing dynamically. The application must interpret search string inputs and filter elements reflecting keyword matches or categorical bounds.</li>
+        <li><strong>FR3 - Cart Operations:</strong> Authenticated users must be able to insert valid products into a persistent shopping cart, edit their purchase quantities, and completely discard cart entries without resulting errors.</li>
+        <li><strong>FR4 - Order Processing:</strong> The system must provide a mechanism for users to confirm their cart contents, compile a total subtotal, log an order schema into the database, and immediately clear the user's active cart.</li>
+        <li><strong>FR5 - Contact Form:</strong> Any visitor must be able to submit a textual message with their email and name, which the backend API will intercept and store inside the database for query via DB administrators.</li>
+    </ul>
+
+    <!-- Section 6 -->
+    <h1 id="nonfunctional">6. Non-Functional Requirements</h1>
+    <ul>
+        <li><strong>Reliability:</strong> Standard execution routines must depend on robust SQLite transaction boundaries to ensure zero data corruption during simultaneous endpoint queries.</li>
+        <li><strong>Usability:</strong> The platform mandates intuitive interactions, stipulating less than 3 user clicks to initiate the addition of a displayed product into a personal cart.</li>
+        <li><strong>Performance:</strong> The application UI must not demonstrate visual lagging, while routine REST API responses for database fetches need to reliably fire in under 250 milliseconds.</li>
+        <li><strong>Security:</strong> All user passwords must undergo irreversible <code>bcrypt</code> hashing upon account creation. All personal endpoints (carts, orders) must invoke middleware to parse JWT Bearer validation protocols preventing unauthorized lateral access.</li>
+        <li><strong>Scalability:</strong> Designed using stateless authentication, the primary Express.js node application must be structured effectively to scale horizontally if transition to a distributed SQL cluster is mandated later.</li>
+    </ul>
+
+    <!-- Section 7 -->
+    <h1 id="constraints">7. Constraints</h1>
+    <ul>
+        <li><strong>Time/Process Constraints:</strong> Development iterations utilize rapid deployment templates utilizing a build-less React CDN injection to reduce setup overhead.</li>
+        <li><strong>Technology Limitations:</strong> Data storage relies solely on an encapsulated local <code>SQLite</code> environment. While excellent for localized testing and low traffic, concurrent volume writes are physically bounded by file locks.</li>
+        <li><strong>Budget Limitations:</strong> As a conceptual build, live domain or third-party SSL, CDN routing dependencies are restricted for subsequent iteration cycles.</li>
+    </ul>
+
+    <!-- Section 8 -->
+    <h1 id="acceptance">8. Acceptance Criteria</h1>
+    <ul>
+        <li><strong>Authentication Accuracy:</strong> A user's profile successfully generates; subsequent login validations with incorrect passwords must explicitly fail.</li>
+        <li><strong>Cart Persistence:</strong> Verified users actively retaining items inside their cart must observe those identical items returning after terminating their session and returning the following day.</li>
+        <li><strong>Order Fulfillment Logic:</strong> Completing a valid checkout forces the exact replication of the cart total to the final order, simultaneously issuing a Cart Wipe command preventing duplicate order queries.</li>
+    </ul>
+
+    <!-- Section 9 -->
+    <h1 id="ui">9. User Interface Requirements</h1>
+    <p>The system design pivots on minimalism combined with high-impact editorial motifs.</p>
+    <ul>
+        <li><strong>Layout:</strong> Employing a Single Page Application canvas mapping. Critical menus (like the shopping cart) must initiate via dynamic, sliding off-screen modal drawers minimizing rigid URL transitions.</li>
+        <li><strong>Color Scheme:</strong> Monochromatic dominance prioritizing white space (`#ffffff` and `#fcfcfc`), starkly contrasted by deep charcoal texts (`#121212`).</li>
+        <li><strong>Typography:</strong> Imposing refined Serif fonts (<strong>"Cormorant"</strong>) for large visual headers, balanced appropriately by utilitarian Sans-Serifs or Monospace (<strong>"DM Mono"</strong>) variables for numerical or interactive data points.</li>
+        <li><strong>User Experience:</strong> Transitions demand micro-animations (hover opacities on image grids, smooth scaling interactions, real-time cart update toasts) ensuring organic engagement responses.</li>
+    </ul>
+
+    <!-- Section 10 -->
+    <h1 id="usecases">10. Use Cases</h1>
+    <ul>
+        <li><strong>UC1 - Searching the Catalog:</strong><br>
+        <em>Scenario:</em> A guest accesses the index. They type "ceramic" into a search form. The UI state synchronously scans available products, filtering non-match components and immediately displaying ceramic items visually without triggering a browser refresh.</li>
+        
+        <li><strong>UC2 - Finalizing an Order:</strong><br>
+        <em>Scenario:</em> A logged-in user with 3 items in their cart opens their cart drawer and selects "Checkout/Place Order". The API intercepts this payload, verifies data integrity against the DB, clones the totals into a sealed Order item, returns a success notification to the UI, and renders the cart empty.</li>
+        
+        <li><strong>UC3 - Invalid Access Attempt:</strong><br>
+        <em>Scenario:</em> A malicious external request attempts to fetch URL <code>/api/orders</code> using cURL, omitting valid headers. The system instantly halts the router protocol, denying database interaction and returning a standard 401 Unauthorized error code.</li>
+    </ul>
+
+    <!-- Section 11 -->
+    <h1 id="data">11. Data Requirements</h1>
+    <ul>
+        <li><strong>Data Types & Sources:</strong> String arrays, Integers (prices/quantities), and Timestamp structures. Inputs trigger exclusively from client-side interaction queries and defined seed product logic inside the application core.</li>
+        <li><strong>Storage Requirements:</strong> Centralized sequentially to a local SQL file structure (<code>shop.db</code>), establishing rigid relational integrity across User, Product, Cart, Order, and Contact tables.</li>
+        <li><strong>Data Management:</strong> Responses and payloads traverse the HTTP channel rigidly via structured JSON formatting. Passwords exclusively exist in memory hashed configurations during storage schemas.</li>
+    </ul>
+
+    <!-- Section 12 -->
+    <h1 id="architecture">12. System Architecture</h1>
+    <p>The system leverages a decoupled frontend/backend dual-tier configuration:</p>
+    <ul>
+        <li><strong>Frontend Component Layer:</strong> Orchestrated completely by React 18, utilizing functional components and hooks to manipulate local logical states while dispensing <code>fetch</code> operations dynamically to backend endpoints.</li>
+        <li><strong>Backend Routing Layer:</strong> Run on Node.js/Express.js, the backend strictly dictates business flow logic—catching requests, parsing JSON limits, checking access rights via JWT verification nodes.</li>
+        <li><strong>Database Layer:</strong> Interconnected intimately with the backend via the <code>better-sqlite3</code> driver to ensure immediate synchrony on data fetching protocols without asynchronous dependency hell.</li>
+    </ul>
+
+    <!-- Section 13 -->
+    <h1 id="technical">13. Technical Requirements</h1>
+    <ul>
+        <li><strong>Software & Environment:</strong> Node.js runtime environment (v16.14.0 or greater).</li>
+        <li><strong>Dependency Packages:</strong>
+            <ul>
+                <li>Server side: <code>express</code>, <code>better-sqlite3</code>, <code>bcryptjs</code>, <code>jsonwebtoken</code>, <code>cors</code>.</li>
+                <li>Client side: <code>React</code> and <code>ReactDOM</code> implemented via explicit unpkg CDN nodes.</li>
+            </ul>
+        </li>
+        <li><strong>Hardware Constraints:</strong> Effectively scalable on minimal 1 Core Virtual Private Servers utilizing 512 MB of dynamic memory resources.</li>
+    </ul>
+
+    <!-- Section 14 -->
+    <h1 id="references">14. References</h1>
+    <ul>
+        <li>React Documentation & Lifecycle - <a href="https://react.dev">https://react.dev</a></li>
+        <li>Express.js API Node Definitions - <a href="https://expressjs.com/">https://expressjs.com/</a></li>
+        <li>SQLite Standard Protocol Data - <a href="https://sqlite.org/docs.html">https://sqlite.org/docs.html</a></li>
+        <li>IETF Transport Authentication (JWT) - RFC 7519</li>
+    </ul>
+</div>
+
+</body>
+</html>
