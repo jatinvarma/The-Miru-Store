@@ -201,6 +201,16 @@ app.put('/api/auth/profile', auth, (req, res) => {
   res.json({ token, user: { id: req.user.id, name, email: req.user.email } });
 });
 
+app.put('/api/auth/password', auth, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Both passwords required' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+  if (!bcrypt.compareSync(currentPassword, user.password)) return res.status(401).json({ error: 'Current password is incorrect' });
+  db.prepare('UPDATE users SET password = ? WHERE id = ?').run(bcrypt.hashSync(newPassword, 10), req.user.id);
+  res.json({ success: true });
+});
+
 // ── PRODUCTS ROUTES ───────────────────────────────────────────
 app.get('/api/products', (req, res) => {
   const { category, search, sort, minPrice, maxPrice } = req.query;
@@ -251,6 +261,8 @@ app.get('/api/products/:id/reviews', (req, res) => {
 app.post('/api/products/:id/reviews', auth, (req, res) => {
   const { rating, comment } = req.body;
   if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating 1-5 required' });
+  const existing = db.prepare('SELECT id FROM reviews WHERE user_id = ? AND product_id = ?').get(req.user.id, req.params.id);
+  if (existing) return res.status(409).json({ error: 'You have already reviewed this product' });
   try {
     const result = db.prepare('INSERT INTO reviews (user_id, product_id, rating, comment) VALUES (?, ?, ?, ?)')
       .run(req.user.id, req.params.id, rating, comment || '');
@@ -316,6 +328,9 @@ app.get('/api/cart', auth, (req, res) => {
 
 app.post('/api/cart', auth, (req, res) => {
   const { product_id, quantity = 1 } = req.body;
+  const product = db.prepare('SELECT stock FROM products WHERE id = ?').get(product_id);
+  if (!product) return res.status(404).json({ error: 'Product not found' });
+  if (product.stock <= 0) return res.status(400).json({ error: 'This product is out of stock' });
   const existing = db.prepare('SELECT * FROM cart WHERE user_id = ? AND product_id = ?').get(req.user.id, product_id);
   if (existing) {
     db.prepare('UPDATE cart SET quantity = quantity + ? WHERE id = ?').run(quantity, existing.id);
@@ -362,6 +377,11 @@ app.post('/api/orders', auth, (req, res) => {
   ).run(req.user.id, total, JSON.stringify(cartItems), JSON.stringify(shipping_address), payment_method,
     payment_details ? JSON.stringify(payment_details) : null, coupon_code || null, discount_amount, 'confirmed');
 
+  // Deduct stock for each ordered item
+  cartItems.forEach(item => {
+    db.prepare('UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?').run(item.quantity, item.product_id);
+  });
+
   db.prepare('DELETE FROM cart WHERE user_id = ?').run(req.user.id);
   res.json({ orderId: result.lastInsertRowid, total, status: 'confirmed' });
 });
@@ -369,6 +389,16 @@ app.post('/api/orders', auth, (req, res) => {
 app.get('/api/orders', auth, (req, res) => {
   const orders = db.prepare('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
   res.json(orders.map(o => ({ ...o, items: JSON.parse(o.items), shipping_address: o.shipping_address })));
+});
+
+app.put('/api/orders/:id/cancel', auth, (req, res) => {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ? AND user_id = ?').get(req.params.id, req.user.id);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (!['confirmed', 'packed'].includes(order.status)) return res.status(400).json({ error: 'Order cannot be cancelled at this stage' });
+  db.prepare("UPDATE orders SET status = 'cancelled' WHERE id = ?").run(req.params.id);
+  const items = JSON.parse(order.items);
+  items.forEach(item => db.prepare('UPDATE products SET stock = stock + ? WHERE id = ?').run(item.quantity, item.product_id));
+  res.json({ success: true });
 });
 
 // ── ADMIN ROUTES ──────────────────────────────────────────────
@@ -405,6 +435,39 @@ app.get('/api/admin/orders', adminAuth, (req, res) => {
     ORDER BY orders.created_at DESC
   `).all().map(o => ({ ...o, items: JSON.parse(o.items) }));
   res.json(orders);
+});
+
+// ── ADMIN PRODUCT CRUD ────────────────────────────────────────
+app.get('/api/admin/products', adminAuth, (req, res) => {
+  res.json(db.prepare('SELECT * FROM products ORDER BY id ASC').all());
+});
+
+app.post('/api/admin/products', adminAuth, (req, res) => {
+  const { name, description, price, image, category, stock, is_new, is_sale, sale_price } = req.body;
+  if (!name || !price) return res.status(400).json({ error: 'Name and price required' });
+  const result = db.prepare('INSERT INTO products (name, description, price, image, category, stock, is_new, is_sale, sale_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').run(name, description || '', parseFloat(price), image || '', category || 'Accessories', parseInt(stock) || 100, is_new ? 1 : 0, is_sale ? 1 : 0, sale_price ? parseFloat(sale_price) : null);
+  res.json({ id: result.lastInsertRowid, success: true });
+});
+
+app.put('/api/admin/products/:id', adminAuth, (req, res) => {
+  const { name, description, price, image, category, stock, is_new, is_sale, sale_price } = req.body;
+  if (!name || !price) return res.status(400).json({ error: 'Name and price required' });
+  db.prepare('UPDATE products SET name=?, description=?, price=?, image=?, category=?, stock=?, is_new=?, is_sale=?, sale_price=? WHERE id=?').run(name, description || '', parseFloat(price), image || '', category || 'Accessories', parseInt(stock) || 0, is_new ? 1 : 0, is_sale ? 1 : 0, sale_price ? parseFloat(sale_price) : null, req.params.id);
+  res.json({ success: true });
+});
+
+app.delete('/api/admin/products/:id', adminAuth, (req, res) => {
+  db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
+// ── ADMIN MESSAGES & NEWSLETTER ──────────────────────────────
+app.get('/api/admin/messages', adminAuth, (req, res) => {
+  res.json(db.prepare('SELECT * FROM messages ORDER BY created_at DESC').all());
+});
+
+app.get('/api/admin/newsletter', adminAuth, (req, res) => {
+  res.json(db.prepare('SELECT * FROM newsletter ORDER BY created_at DESC').all());
 });
 
 // ── CONTACT ROUTE ─────────────────────────────────────────────
