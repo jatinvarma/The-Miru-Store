@@ -1,0 +1,177 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import useApi from '../hooks/useApi';
+import useDebounce from '../hooks/useDebounce';
+import Stars from './Stars';
+import SkeletonCard from './SkeletonCard';
+import ProductDetailModal from './ProductDetailModal';
+import { showToast } from '../utils/toast';
+
+export default function Products({ token, onAddToCart, onAuthRequired, wishIds, onWishToggle, activeCategory, setActiveCategory }) {
+  const [products, setProducts] = useState([]);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
+  const [sort, setSort] = useState('default');
+  const [maxPrice, setMaxPrice] = useState(50000);
+  const [loading, setLoading] = useState(true);
+  const [detailProduct, setDetailProduct] = useState(null);
+  const api = useApi(token);
+  
+  const cats = ['All', 'Accessories', 'Home', 'Kitchen', 'Apparel', 'Furniture', 'Workspace', 'Tech', 'Wellness'];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const params = new URLSearchParams({ 
+      category: activeCategory, 
+      search: debouncedSearch, 
+      sort, 
+      maxPrice 
+    }).toString();
+    const data = await api.get(`/products?${params}`);
+    setProducts(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, [activeCategory, debouncedSearch, sort, maxPrice]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleAdd = async (p) => {
+    if (!token) { onAuthRequired(); return; }
+    await onAddToCart(p.id);
+    showToast(`${p.name} added to cart!`);
+  };
+
+  // Keep detail modal updated if product stock/status changes
+  const handleProductModalClick = (p) => {
+    setDetailProduct(p);
+  };
+
+  return (
+    <div className="section" id="shop">
+      <div className="section-header">
+        <h2>Products</h2>
+        <span style={{ fontSize: '0.7rem', color: 'var(--ink-soft)' }}>{products.length} items</span>
+      </div>
+      <div className="sticky-filters">
+        <div className="search-bar" style={{ marginBottom: '1rem' }}>
+          <input 
+            placeholder="Search products..." 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+          />
+          <select value={sort} onChange={e => setSort(e.target.value)}>
+            <option value="default">Featured</option>
+            <option value="price_asc">Price ↑</option>
+            <option value="price_desc">Price ↓</option>
+            <option value="rating">Top Rated</option>
+          </select>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap', paddingBottom: '1rem' }}>
+          <div className="filters" style={{ marginBottom: 0 }}>
+            {cats.map(c => (
+              <button 
+                key={c} 
+                className={`filter-btn ${activeCategory === c ? 'active' : ''}`} 
+                onClick={() => setActiveCategory(c)}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          <div className="price-range-wrap" style={{ marginBottom: 0, gap: '1rem' }}>
+            <span>Max Price:</span>
+            <input 
+              type="range" 
+              min="1000" 
+              max="50000" 
+              step="1000" 
+              value={maxPrice} 
+              onChange={e => setMaxPrice(e.target.value)} 
+            />
+            <span>₹{maxPrice}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="products-grid">
+        {loading ? (
+          Array(8).fill(0).map((_, i) => <SkeletonCard key={i} />)
+        ) : products.map(p => (
+          <div className="product-card fade-in" key={p.id} onClick={() => setDetailProduct(p)}>
+            <div className="product-img">
+              <img src={p.image} alt={p.name} loading="lazy" />
+              <div className="badge-wrap">
+                {p.is_new === 1 && <span className="badge badge-new">New</span>}
+                {p.is_sale === 1 && <span className="badge badge-sale">Sale</span>}
+                {p.stock === 0 && <span className="badge badge-low">Out of Stock</span>}
+                {p.stock > 0 && p.stock <= 5 && <span className="badge badge-low">Low Stock</span>}
+              </div>
+              {token && (
+                <button 
+                  className="wish-btn" 
+                  onClick={e => { e.stopPropagation(); onWishToggle(p.id); }}
+                >
+                  {wishIds && wishIds.has(p.id) ? '♥' : '♡'}
+                </button>
+              )}
+              <div className="product-overlay">
+                {p.stock > 0 ? (
+                  <button 
+                    className="btn btn-sm" 
+                    style={{ background: 'var(--cream)', color: 'var(--ink)' }} 
+                    onClick={e => { e.stopPropagation(); handleAdd(p); }}
+                  >
+                    Add to Cart
+                  </button>
+                ) : (
+                  <span className="btn btn-sm" style={{ background: '#888', color: '#fff', cursor: 'not-allowed', opacity: 0.8 }}>
+                    Out of Stock
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="product-info">
+              <div className="product-category">{p.category}</div>
+              <div className="product-name">{p.name}</div>
+              <Stars rating={p.avg_rating || 0} count={p.review_count || 0} />
+              <div className="product-footer" style={{ marginTop: '0.75rem' }}>
+                <span className="product-price">
+                  {p.is_sale && p.sale_price ? (
+                    <>
+                      <span style={{ textDecoration: 'line-through', fontSize: '1rem', color: 'var(--ink-soft)', marginRight: '6px' }}>
+                        ₹{p.price.toFixed(2)}
+                      </span>
+                      ₹{p.sale_price.toFixed(2)}
+                    </>
+                  ) : (
+                    `₹${p.price.toFixed(2)}`
+                  )}
+                </span>
+                <button 
+                  className="add-btn" 
+                  disabled={p.stock <= 0} 
+                  style={{ opacity: p.stock <= 0 ? 0.35 : 1, cursor: p.stock <= 0 ? 'not-allowed' : 'pointer' }} 
+                  onClick={e => { e.stopPropagation(); if (p.stock > 0) handleAdd(p); }}
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {detailProduct && (
+        <ProductDetailModal 
+          product={detailProduct} 
+          onClose={() => setDetailProduct(null)} 
+          onAddToCart={onAddToCart} 
+          token={token} 
+          wishIds={wishIds || new Set()} 
+          onWishToggle={onWishToggle} 
+          onProductClick={handleProductModalClick}
+        />
+      )}
+    </div>
+  );
+}
