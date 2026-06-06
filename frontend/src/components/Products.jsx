@@ -134,6 +134,17 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
               <option value="rating">Top Rated</option>
             </select>
           </div>
+          <button
+            className="filter-categories-btn"
+            onClick={() => document.getElementById('categories')?.scrollIntoView({ behavior: 'smooth' })}
+            title="Browse Categories"
+          >
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            Categories
+          </button>
         </div>
 
         {/* Row 2: Category pills + Price range */}

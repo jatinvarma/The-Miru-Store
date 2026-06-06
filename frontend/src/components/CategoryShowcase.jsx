@@ -13,7 +13,7 @@ export default function CategoryShowcase({ onCategorySelect }) {
   ];
   
   return (
-    <div className="category-showcase">
+    <div className="category-showcase" id="categories">
       <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', textAlign: 'center' }}>Shop by Category</h2>
       <div className="category-grid">
         {categories.map(c => (

@@ -648,6 +648,38 @@ html[data-theme='dark'] .filter-btn.active {
   color: var(--ink);
 }
 
+.filter-categories-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-shrink: 0;
+  height: 46px;
+  padding: 0 16px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+}
+
+.filter-categories-btn svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.filter-categories-btn:hover {
+  border-color: var(--accent);
+  background: rgba(154, 123, 86, 0.08);
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
 .filter-bottom-row {
   display: flex;
   align-items: center;
