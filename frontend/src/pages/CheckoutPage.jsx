@@ -120,6 +120,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
   const [couponCode, setCouponCode] = useState('');
   const [coupon, setCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
+  const [paymentError, setPaymentError] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // Global Checkout Session Timer state (5 minutes)
@@ -205,57 +206,57 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
 
   const handleCheckoutClick = async () => {
     if (sessionSecondsLeft === 0) {
-      showToast('Checkout session has expired. Please return to cart.');
+      setPaymentError('Checkout session has expired. Please return to cart.');
       return;
     }
 
     if (!address.street || !address.city || !address.state || !address.zip) {
-      showToast('Please complete all shipping fields.');
+      setPaymentError('Please complete all shipping fields before proceeding.');
       return;
     }
 
     if (payment === 'credit_card') {
       const cardBrand = getCardBrand(paymentDetails.cardNumber);
       if (!paymentDetails.cardNumber || paymentDetails.cardNumber.length < 12) {
-        showToast('Please enter a valid card number.');
+        setPaymentError('Please enter a valid card number.');
         return;
       }
       if (!validateLuhn(paymentDetails.cardNumber)) {
-        showToast('Invalid card number. Please check the digits.');
+        setPaymentError('Invalid card number. Please check the digits and try again.');
         return;
       }
       if (!paymentDetails.expiry || !validateExpiry(paymentDetails.expiry)) {
-        showToast('Please enter a valid expiry date (MM / YY) in the future.');
+        setPaymentError('Please enter a valid expiry date (MM / YY) in the future.');
         return;
       }
       const cvvMin = cardBrand === 'amex' ? 4 : 3;
       if (!paymentDetails.cvv || paymentDetails.cvv.length < cvvMin) {
-        showToast(`Please enter a valid ${cvvMin}-digit CVV.`);
+        setPaymentError(`Please enter a valid ${cvvMin}-digit CVV.`);
         return;
       }
       if (!paymentDetails.cardHolder || !paymentDetails.cardHolder.trim()) {
-        showToast('Please enter the cardholder\'s name.');
+        setPaymentError("Please enter the cardholder's name.");
         return;
       }
     }
 
     if (payment === 'upi') {
       if (!paymentDetails.upiId) {
-        showToast('Please enter your UPI ID.');
+        setPaymentError('Please enter your UPI ID.');
         return;
       }
       if (!upiVerified) {
-        showToast('Please verify your UPI ID first.');
+        setPaymentError('Please verify your UPI ID first.');
         return;
       }
     }
 
     if (payment === 'upi_qr') {
       if (qrSecondsLeft === 0) {
-        showToast('QR Code has expired. Please regenerate to pay.');
+        setPaymentError('QR Code has expired. Please regenerate to pay.');
         return;
       }
-      showToast('Please scan the QR code to complete payment.');
+      setPaymentError('Please scan the QR code to complete payment.');
       return;
     }
 
@@ -298,8 +299,8 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         setShowGateway(false);
         setLoading(false);
       } catch (err) {
-        setGatewayError('Payment rejected by issuer. Please try again.');
-        setGatewayStep('otp');
+        setPaymentError('Payment rejected by issuer. Please check your card details or try another card.');
+        setShowGateway(false);
         setLoading(false);
       }
     }, 2000);
@@ -357,7 +358,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         discount_amount: discount
       });
     } catch (err) {
-      showToast('Checkout failed. Please try again.');
+      setPaymentError('Checkout failed. Please try again.');
       setLoading(false);
     }
   };
@@ -374,7 +375,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         discount_amount: discount
       });
     } catch (err) {
-      showToast('Checkout failed. Please try again.');
+      setPaymentError('Checkout failed. Please try again.');
       setLoading(false);
     }
   };
@@ -413,7 +414,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         setPaypalModalOpen(false);
         setPaypalLoading(false);
       } catch (err) {
-        showToast('PayPal Checkout failed. Please try again.');
+        setPaymentError('PayPal Checkout failed. Please try again.');
         setPaypalLoading(false);
       }
     }, 2000);
@@ -1116,6 +1117,26 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
               <span>🔒 Verified by Visa / Mastercard Identity Check Secure</span>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Payment details error popup modal */}
+      {paymentError && (
+        <div className="paypal-modal-overlay" style={{ zIndex: 300 }}>
+          <div className="paypal-modal" style={{ width: '360px', padding: '2rem', textAlign: 'center', borderRadius: '16px' }}>
+            <div style={{ fontSize: '3.5rem', color: 'var(--red)', marginBottom: '0.75rem' }}>✕</div>
+            <h3 style={{ fontWeight: '700', fontSize: '1.2rem', marginBottom: '0.75rem', color: 'var(--ink)' }}>Payment Details Error</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+              {paymentError}
+            </p>
+            <button 
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '12px', borderRadius: '8px' }} 
+              onClick={() => setPaymentError(null)}
+            >
+              Okay
+            </button>
           </div>
         </div>
       )}
