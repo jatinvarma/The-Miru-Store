@@ -10,6 +10,10 @@ import AccountDashboard from './pages/AccountDashboard';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AdminPanel from './pages/AdminPanel';
+import About from './pages/About';
+import ShippingPolicy from './pages/ShippingPolicy';
+import ReturnsRefunds from './pages/ReturnsRefunds';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import useApi from './hooks/useApi';
 import { showToast } from './utils/toast';
 
@@ -30,12 +34,12 @@ export default function App() {
   const [page, setPage] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [wishIds, setWishIds] = useState(new Set());
-  
+
   const api = useApi(token);
   const isAdmin = user?.email === ADMIN_EMAIL;
 
-  useEffect(() => { 
-    document.documentElement.setAttribute('data-theme', theme); 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
   const loadCart = useCallback(async () => {
@@ -44,8 +48,8 @@ export default function App() {
     setCart(Array.isArray(data) ? data : []);
   }, [token]);
 
-  useEffect(() => { 
-    loadCart(); 
+  useEffect(() => {
+    loadCart();
   }, [loadCart]);
 
   const loadWishlist = useCallback(async () => {
@@ -54,18 +58,31 @@ export default function App() {
     setWishIds(new Set(Array.isArray(data) ? data.map(i => i.id) : []));
   }, [token]);
 
-  useEffect(() => { 
-    loadWishlist(); 
+  useEffect(() => {
+    loadWishlist();
   }, [loadWishlist]);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [page]);
+
+  const scrollToShop = useCallback(() => {
+    setTimeout(() => {
+      const el = document.getElementById('shop');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  }, []);
 
   const toggleWishlist = async (productId) => {
     if (!token) { setAuthOpen(true); return; }
     if (wishIds.has(productId)) {
       await api.del(`/wishlist/${productId}`);
-      setWishIds(s => { 
-        const n = new Set(s); 
-        n.delete(productId); 
-        return n; 
+      setWishIds(s => {
+        const n = new Set(s);
+        n.delete(productId);
+        return n;
       });
       showToast('Removed from wishlist');
     } else {
@@ -76,20 +93,20 @@ export default function App() {
   };
 
   const handleLogin = (tok, usr) => {
-    setToken(tok); 
+    setToken(tok);
     setUser(usr);
     localStorage.setItem('miru_token', tok);
     localStorage.setItem('miru_user', JSON.stringify(usr));
   };
 
   const handleLogout = () => {
-    setToken(null); 
-    setUser(null); 
-    setCart([]); 
+    setToken(null);
+    setUser(null);
+    setCart([]);
     setWishIds(new Set());
-    localStorage.removeItem('miru_token'); 
+    localStorage.removeItem('miru_token');
     localStorage.removeItem('miru_user');
-    showToast('Signed out'); 
+    showToast('Signed out');
     setPage('home');
   };
 
@@ -98,16 +115,33 @@ export default function App() {
     await loadCart();
   };
 
+  const updateCartQty = async (productId, quantity) => {
+    if (!token) { setAuthOpen(true); return; }
+    const cartItem = cart.find(item => item.product_id === productId);
+    if (!cartItem) {
+      if (quantity > 0) {
+        await api.post('/cart', { product_id: productId, quantity });
+      }
+    } else {
+      if (quantity < 1) {
+        await api.del(`/cart/${cartItem.id}`);
+      } else {
+        await api.put(`/cart/${cartItem.id}`, { quantity });
+      }
+    }
+    await loadCart();
+  };
+
   const toggleTheme = () => {
     const next = theme === 'light' ? 'dark' : 'light';
-    setTheme(next); 
+    setTheme(next);
     localStorage.setItem('miru_theme', next);
   };
 
   const submitCheckoutFinal = async (checkoutData) => {
     const data = await api.post('/orders', checkoutData);
-    if (data.error) { 
-      showToast('Error: ' + data.error); 
+    if (data.error) {
+      showToast('Error: ' + data.error);
       throw new Error(data.error);
     }
     setCart([]);
@@ -119,51 +153,63 @@ export default function App() {
 
   return (
     <>
-      <Nav 
-        user={user} 
-        cartCount={cartCount} 
-        onCartOpen={() => setPage('cart')} 
-        onAuthOpen={() => setAuthOpen(true)} 
-        onLogout={handleLogout} 
-        page={page} 
-        setPage={setPage} 
-        theme={theme} 
-        toggleTheme={toggleTheme} 
-        isAdmin={isAdmin} 
+      <Nav
+        user={user}
+        cartCount={cartCount}
+        onCartOpen={() => setPage('cart')}
+        onAuthOpen={() => setAuthOpen(true)}
+        onLogout={handleLogout}
+        page={page}
+        setPage={setPage}
+        theme={theme}
+        toggleTheme={toggleTheme}
+        isAdmin={isAdmin}
       />
 
       {page === 'home' && (
-        <Home 
-          token={token} 
-          onAddToCart={addToCart} 
-          onAuthRequired={() => setAuthOpen(true)} 
-          wishIds={wishIds} 
-          onWishToggle={toggleWishlist} 
-          activeCategory={selectedCategory} 
-          setActiveCategory={setSelectedCategory} 
+        <Home
+          token={token}
+          cart={cart}
+          onAddToCart={addToCart}
+          onUpdateCartQty={updateCartQty}
+          onAuthRequired={() => setAuthOpen(true)}
+          wishIds={wishIds}
+          onWishToggle={toggleWishlist}
+          activeCategory={selectedCategory}
+          setActiveCategory={setSelectedCategory}
         />
       )}
-      
+
       {page === 'contact' && <Contact />}
-      
+
+      {page === 'about' && <About onExplore={() => setPage('home')} />}
+
+      {page === 'shipping-policy' && <ShippingPolicy onBackToShop={() => setPage('home')} />}
+
+      {page === 'returns-refunds' && <ReturnsRefunds onBackToShop={() => setPage('home')} />}
+
+      {page === 'privacy-policy' && <PrivacyPolicy onBackToShop={() => setPage('home')} />}
+
       {page === 'wishlist' && (
-        <WishlistPage 
-          token={token} 
-          onAddToCart={addToCart} 
-          onWishToggle={toggleWishlist} 
+        <WishlistPage
+          token={token}
+          cart={cart}
+          onAddToCart={addToCart}
+          onUpdateCartQty={updateCartQty}
+          onWishToggle={toggleWishlist}
         />
       )}
-      
+
       {(page === 'orders' || page === 'profile') && (
-        <AccountDashboard 
-          token={token} 
-          user={user} 
-          page={page} 
-          setPage={setPage} 
-          onUpdate={handleLogin} 
+        <AccountDashboard
+          token={token}
+          user={user}
+          page={page}
+          setPage={setPage}
+          onUpdate={handleLogin}
         />
       )}
-      
+
       {page === 'admin' && (
         isAdmin ? (
           <AdminPanel token={token} />
@@ -173,7 +219,7 @@ export default function App() {
           </div>
         )
       )}
-      
+
       {page === 'cart' && (
         <CartPage
           token={token}
@@ -183,7 +229,7 @@ export default function App() {
           onShop={() => setPage('home')}
         />
       )}
-      
+
       {page === 'checkout' && (
         <CheckoutPage
           cart={cart}
@@ -204,10 +250,10 @@ export default function App() {
             </div>
             <div className="footer-col">
               <div className="footer-col-title">Shop</div>
-              <a onClick={() => { setSelectedCategory('All'); setPage('home'); }}>All Products</a>
-              <a onClick={() => { setSelectedCategory('Home'); setPage('home'); }}>Home</a>
-              <a onClick={() => { setSelectedCategory('Apparel'); setPage('home'); }}>Apparel</a>
-              <a onClick={() => { setSelectedCategory('Kitchen'); setPage('home'); }}>Kitchen</a>
+              <a onClick={() => { setSelectedCategory('All'); setPage('home'); scrollToShop(); }}>All Products</a>
+              <a onClick={() => { setSelectedCategory('Home'); setPage('home'); scrollToShop(); }}>Home</a>
+              <a onClick={() => { setSelectedCategory('Apparel'); setPage('home'); scrollToShop(); }}>Apparel</a>
+              <a onClick={() => { setSelectedCategory('Kitchen'); setPage('home'); scrollToShop(); }}>Kitchen</a>
             </div>
             <div className="footer-col">
               <div className="footer-col-title">Account</div>
@@ -218,10 +264,10 @@ export default function App() {
             </div>
             <div className="footer-col">
               <div className="footer-col-title">Info</div>
-              <a>Shipping Policy</a>
-              <a>Returns &amp; Refunds</a>
-              <a>Privacy Policy</a>
-              <a>Terms of Service</a>
+              <a onClick={() => setPage('about')}>About Us</a>
+              <a onClick={() => setPage('shipping-policy')}>Shipping Policy</a>
+              <a onClick={() => setPage('returns-refunds')}>Returns &amp; Refunds</a>
+              <a onClick={() => setPage('privacy-policy')}>Privacy Policy</a>
             </div>
           </div>
           <div style={{ borderTop: '1px solid var(--border)', padding: '1.25rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
@@ -235,9 +281,9 @@ export default function App() {
       <ScrollToTopFAB />
 
       {authOpen && (
-        <AuthModal 
-          onClose={() => setAuthOpen(false)} 
-          onLogin={handleLogin} 
+        <AuthModal
+          onClose={() => setAuthOpen(false)}
+          onLogin={handleLogin}
         />
       )}
     </>

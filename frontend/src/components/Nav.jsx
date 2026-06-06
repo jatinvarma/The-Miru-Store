@@ -24,6 +24,7 @@ export default function Nav({ user, cartCount, onAuthOpen, onLogout, page, setPa
           </div>
         </label>
         <a onClick={() => go('home')} className={page === 'home' ? 'active-link' : ''}>Shop</a>
+        <a onClick={() => go('about')} className={page === 'about' ? 'active-link' : ''}>About</a>
         <a onClick={() => go('contact')} className={page === 'contact' ? 'active-link' : ''}>Contact</a>
         {user && (
           <>

@@ -80,7 +80,7 @@ export default function CartPage({ token, cart, onCartChange, onCheckout, onShop
               <div className="cart-items-list">
                 {cart.map(item => {
                   const ep = item.is_sale && item.sale_price ? item.sale_price : item.price;
-                  const onSale = item.is_sale && item.sale_price;
+                  const onSale = !!(item.is_sale && item.sale_price);
                   return (
                     <div className="cart-item-row fade-in" key={item.id}>
                       {/* Thumbnail */}

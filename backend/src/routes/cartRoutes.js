@@ -7,7 +7,7 @@ const router = express.Router();
 // Get cart
 router.get('/', auth, (req, res) => {
   const items = db.prepare(`
-    SELECT products.*, cart.quantity, cart.id
+    SELECT products.*, products.id AS product_id, cart.id AS id, cart.quantity
     FROM cart JOIN products ON cart.product_id = products.id
     WHERE cart.user_id = ?
   `).all(req.user.id);
@@ -20,7 +20,7 @@ router.post('/', auth, (req, res) => {
   const product = db.prepare('SELECT stock FROM products WHERE id = ?').get(product_id);
   if (!product) return res.status(404).json({ error: 'Product not found' });
   if (product.stock <= 0) return res.status(400).json({ error: 'This product is out of stock' });
-  
+
   const existing = db.prepare('SELECT * FROM cart WHERE user_id = ? AND product_id = ?').get(req.user.id, product_id);
   if (existing) {
     db.prepare('UPDATE cart SET quantity = quantity + ? WHERE id = ?').run(quantity, existing.id);

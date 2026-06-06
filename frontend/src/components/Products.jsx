@@ -6,7 +6,7 @@ import SkeletonCard from './SkeletonCard';
 import ProductDetailModal from './ProductDetailModal';
 import { showToast } from '../utils/toast';
 
-export default function Products({ token, onAddToCart, onAuthRequired, wishIds, onWishToggle, activeCategory, setActiveCategory }) {
+export default function Products({ token, cart, onAddToCart, onUpdateCartQty, onAuthRequired, wishIds, onWishToggle, activeCategory, setActiveCategory }) {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
@@ -15,16 +15,16 @@ export default function Products({ token, onAddToCart, onAuthRequired, wishIds, 
   const [loading, setLoading] = useState(true);
   const [detailProduct, setDetailProduct] = useState(null);
   const api = useApi(token);
-  
+
   const cats = ['All', 'Accessories', 'Home', 'Kitchen', 'Apparel', 'Furniture', 'Workspace', 'Tech', 'Wellness'];
 
   const load = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ 
-      category: activeCategory, 
-      search: debouncedSearch, 
-      sort, 
-      maxPrice 
+    const params = new URLSearchParams({
+      category: activeCategory,
+      search: debouncedSearch,
+      sort,
+      maxPrice
     }).toString();
     const data = await api.get(`/products?${params}`);
     setProducts(Array.isArray(data) ? data : []);
@@ -41,6 +41,12 @@ export default function Products({ token, onAddToCart, onAuthRequired, wishIds, 
     showToast(`${p.name} added to cart!`);
   };
 
+  const handleQtyChange = async (e, p, newQty) => {
+    e.stopPropagation();
+    if (!token) { onAuthRequired(); return; }
+    await onUpdateCartQty(p.id, newQty);
+  };
+
   // Keep detail modal updated if product stock/status changes
   const handleProductModalClick = (p) => {
     setDetailProduct(p);
@@ -54,10 +60,10 @@ export default function Products({ token, onAddToCart, onAuthRequired, wishIds, 
       </div>
       <div className="sticky-filters">
         <div className="search-bar" style={{ marginBottom: '1rem' }}>
-          <input 
-            placeholder="Search products..." 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
+          <input
+            placeholder="Search products..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
           />
           <select value={sort} onChange={e => setSort(e.target.value)}>
             <option value="default">Featured</option>
@@ -69,9 +75,9 @@ export default function Products({ token, onAddToCart, onAuthRequired, wishIds, 
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap', paddingBottom: '1rem' }}>
           <div className="filters" style={{ marginBottom: 0 }}>
             {cats.map(c => (
-              <button 
-                key={c} 
-                className={`filter-btn ${activeCategory === c ? 'active' : ''}`} 
+              <button
+                key={c}
+                className={`filter-btn ${activeCategory === c ? 'active' : ''}`}
                 onClick={() => setActiveCategory(c)}
               >
                 {c}
@@ -80,95 +86,150 @@ export default function Products({ token, onAddToCart, onAuthRequired, wishIds, 
           </div>
           <div className="price-range-wrap" style={{ marginBottom: 0, gap: '1rem' }}>
             <span>Max Price:</span>
-            <input 
-              type="range" 
-              min="1000" 
-              max="50000" 
-              step="1000" 
-              value={maxPrice} 
-              onChange={e => setMaxPrice(e.target.value)} 
+            <input
+              type="range"
+              min="1000"
+              max="50000"
+              step="1000"
+              value={maxPrice}
+              onChange={e => setMaxPrice(e.target.value)}
             />
             <span>₹{maxPrice}</span>
           </div>
         </div>
       </div>
-      
+
       <div className="products-grid">
         {loading ? (
           Array(8).fill(0).map((_, i) => <SkeletonCard key={i} />)
-        ) : products.map(p => (
-          <div className="product-card fade-in" key={p.id} onClick={() => setDetailProduct(p)}>
-            <div className="product-img">
-              <img src={p.image} alt={p.name} loading="lazy" />
-              <div className="badge-wrap">
-                {p.is_new === 1 && <span className="badge badge-new">New</span>}
-                {p.is_sale === 1 && <span className="badge badge-sale">Sale</span>}
-                {p.stock === 0 && <span className="badge badge-low">Out of Stock</span>}
-                {p.stock > 0 && p.stock <= 5 && <span className="badge badge-low">Low Stock</span>}
-              </div>
-              {token && (
-                <button 
-                  className="wish-btn" 
-                  onClick={e => { e.stopPropagation(); onWishToggle(p.id); }}
-                >
-                  {wishIds && wishIds.has(p.id) ? '♥' : '♡'}
-                </button>
-              )}
-              <div className="product-overlay">
-                {p.stock > 0 ? (
-                  <button 
-                    className="btn btn-sm" 
-                    style={{ background: 'var(--cream)', color: 'var(--ink)' }} 
-                    onClick={e => { e.stopPropagation(); handleAdd(p); }}
+        ) : products.map(p => {
+          const cartItem = cart?.find(item => item.product_id === p.id);
+          const cartQty = cartItem ? cartItem.quantity : 0;
+          return (
+            <div className="product-card fade-in" key={p.id} onClick={() => setDetailProduct(p)}>
+              <div className="product-img">
+                <img src={p.image} alt={p.name} loading="lazy" />
+                <div className="badge-wrap">
+                  {p.is_new === 1 && <span className="badge badge-new">New</span>}
+                  {p.is_sale === 1 && <span className="badge badge-sale">Sale</span>}
+                  {p.stock === 0 && <span className="badge badge-low">Out of Stock</span>}
+                  {p.stock > 0 && p.stock <= 5 && <span className="badge badge-low">Low Stock</span>}
+                </div>
+                {token && (
+                  <button
+                    className="wish-btn"
+                    onClick={e => { e.stopPropagation(); onWishToggle(p.id); }}
                   >
-                    Add to Cart
+                    {wishIds && wishIds.has(p.id) ? '♥' : '♡'}
                   </button>
-                ) : (
-                  <span className="btn btn-sm" style={{ background: '#888', color: '#fff', cursor: 'not-allowed', opacity: 0.8 }}>
-                    Out of Stock
-                  </span>
                 )}
-              </div>
-            </div>
-            <div className="product-info">
-              <div className="product-category">{p.category}</div>
-              <div className="product-name">{p.name}</div>
-              <Stars rating={p.avg_rating || 0} count={p.review_count || 0} />
-              <div className="product-footer" style={{ marginTop: '0.75rem' }}>
-                <span className="product-price">
-                  {p.is_sale && p.sale_price ? (
-                    <>
-                      <span style={{ textDecoration: 'line-through', fontSize: '1rem', color: 'var(--ink-soft)', marginRight: '6px' }}>
-                        ₹{p.price.toFixed(2)}
-                      </span>
-                      ₹{p.sale_price.toFixed(2)}
-                    </>
+                <div className="product-overlay">
+                  {p.stock > 0 ? (
+                    cartQty > 0 ? (
+                      <div className="golden-qty-stepper" onClick={e => e.stopPropagation()}>
+                        <button onClick={e => handleQtyChange(e, p, cartQty - 1)} title="Decrease quantity">
+                          {cartQty === 1 ? (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6l-1 14H6L5 6" />
+                              <path d="M10 11v6M14 11v6" />
+                              <path d="M9 6V4h6v2" />
+                            </svg>
+                          ) : (
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                          )}
+                        </button>
+                        <span className="qty-val">{cartQty}</span>
+                        <button onClick={e => handleQtyChange(e, p, cartQty + 1)} title="Increase quantity">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: 'var(--cream)', color: 'var(--ink)' }}
+                        onClick={e => { e.stopPropagation(); handleAdd(p); }}
+                      >
+                        Add to Cart
+                      </button>
+                    )
                   ) : (
-                    `₹${p.price.toFixed(2)}`
+                    <span className="btn btn-sm" style={{ background: '#888', color: '#fff', cursor: 'not-allowed', opacity: 0.8 }}>
+                      Out of Stock
+                    </span>
                   )}
-                </span>
-                <button 
-                  className="add-btn" 
-                  disabled={p.stock <= 0} 
-                  style={{ opacity: p.stock <= 0 ? 0.35 : 1, cursor: p.stock <= 0 ? 'not-allowed' : 'pointer' }} 
-                  onClick={e => { e.stopPropagation(); if (p.stock > 0) handleAdd(p); }}
-                >
-                  +
-                </button>
+                </div>
+              </div>
+              <div className="product-info">
+                <div className="product-category">{p.category}</div>
+                <div className="product-name">{p.name}</div>
+                <Stars rating={p.avg_rating || 0} count={p.review_count || 0} />
+                <div className="product-footer" style={{ marginTop: '0.75rem' }}>
+                  <span className="product-price">
+                    {p.is_sale && p.sale_price ? (
+                      <>
+                        <span style={{ textDecoration: 'line-through', fontSize: '1rem', color: 'var(--ink-soft)', marginRight: '6px' }}>
+                          ₹{p.price.toFixed(2)}
+                        </span>
+                        ₹{p.sale_price.toFixed(2)}
+                      </>
+                    ) : (
+                      `₹${p.price.toFixed(2)}`
+                    )}
+                  </span>
+                  {cartQty > 0 ? (
+                    <span
+                      className="add-btn"
+                      style={{
+                        background: 'var(--accent)',
+                        color: '#fff',
+                        fontSize: '0.8rem',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        padding: '2px',
+                        cursor: 'default'
+                      }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {cartQty}
+                    </span>
+                  ) : (
+                    <button
+                      className="add-btn"
+                      disabled={p.stock <= 0}
+                      style={{ opacity: p.stock <= 0 ? 0.35 : 1, cursor: p.stock <= 0 ? 'not-allowed' : 'pointer' }}
+                      onClick={e => { e.stopPropagation(); if (p.stock > 0) handleAdd(p); }}
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      
+
       {detailProduct && (
-        <ProductDetailModal 
-          product={detailProduct} 
-          onClose={() => setDetailProduct(null)} 
-          onAddToCart={onAddToCart} 
-          token={token} 
-          wishIds={wishIds || new Set()} 
-          onWishToggle={onWishToggle} 
+        <ProductDetailModal
+          product={detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onAddToCart={onAddToCart}
+          onUpdateCartQty={onUpdateCartQty}
+          cart={cart}
+          token={token}
+          wishIds={wishIds || new Set()}
+          onWishToggle={onWishToggle}
           onProductClick={handleProductModalClick}
         />
       )}

@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import useApi from '../hooks/useApi';
 import SkeletonCard from '../components/SkeletonCard';
+import ProductDetailModal from '../components/ProductDetailModal';
 import { showToast } from '../utils/toast';
 
-export default function WishlistPage({ token, onAddToCart, onWishToggle }) {
+export default function WishlistPage({ token, cart, onAddToCart, onUpdateCartQty, onWishToggle }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [detailProduct, setDetailProduct] = useState(null);
   const api = useApi(token);
 
   const load = () => {
     setLoading(true);
-    api.get('/wishlist').then(d => { 
-      setItems(Array.isArray(d) ? d : []); 
-      setLoading(false); 
+    api.get('/wishlist').then(d => {
+      setItems(Array.isArray(d) ? d : []);
+      setLoading(false);
     });
   };
 
@@ -30,6 +32,11 @@ export default function WishlistPage({ token, onAddToCart, onWishToggle }) {
   const handleAdd = async (p) => {
     await onAddToCart(p.id);
     showToast(`${p.name} added to cart!`);
+  };
+
+  const handleQtyChange = async (e, p, newQty) => {
+    e.stopPropagation();
+    await onUpdateCartQty(p.id, newQty);
   };
 
   return (
@@ -50,8 +57,10 @@ export default function WishlistPage({ token, onAddToCart, onWishToggle }) {
         <div className="products-grid">
           {items.map(p => {
             const ep = p.is_sale && p.sale_price ? p.sale_price : p.price;
+            const cartItem = cart?.find(item => item.product_id === p.id);
+            const cartQty = cartItem ? cartItem.quantity : 0;
             return (
-              <div className="product-card fade-in" key={p.id}>
+              <div className="product-card fade-in" key={p.id} onClick={() => setDetailProduct(p)}>
                 <div className="product-img">
                   <img src={p.image} alt={p.name} loading="lazy" />
                   <div className="badge-wrap">
@@ -59,7 +68,48 @@ export default function WishlistPage({ token, onAddToCart, onWishToggle }) {
                     {p.is_sale === 1 && <span className="badge badge-sale">Sale</span>}
                     {p.stock <= 0 && <span className="badge badge-low">Out of Stock</span>}
                   </div>
-                  <button className="wish-btn" style={{ color: 'var(--red)' }} onClick={() => handleRemove(p.id)}>♥</button>
+                  <button className="wish-btn" style={{ color: 'var(--red)' }} onClick={(e) => { e.stopPropagation(); handleRemove(p.id); }}>♥</button>
+                  <div className="product-overlay">
+                    {p.stock > 0 ? (
+                      cartQty > 0 ? (
+                        <div className="golden-qty-stepper" onClick={e => e.stopPropagation()}>
+                          <button onClick={e => handleQtyChange(e, p, cartQty - 1)} title="Decrease quantity">
+                            {cartQty === 1 ? (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                                <polyline points="3 6 5 6 21 6" />
+                                <path d="M19 6l-1 14H6L5 6" />
+                                <path d="M10 11v6M14 11v6" />
+                                <path d="M9 6V4h6v2" />
+                              </svg>
+                            ) : (
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                              </svg>
+                            )}
+                          </button>
+                          <span className="qty-val">{cartQty}</span>
+                          <button onClick={e => handleQtyChange(e, p, cartQty + 1)} title="Increase quantity">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                              <line x1="12" y1="5" x2="12" y2="19" />
+                              <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="btn btn-sm"
+                          style={{ background: 'var(--cream)', color: 'var(--ink)' }}
+                          onClick={e => { e.stopPropagation(); handleAdd(p); }}
+                        >
+                          Add to Cart
+                        </button>
+                      )
+                    ) : (
+                      <span className="btn btn-sm" style={{ background: '#888', color: '#fff', cursor: 'not-allowed', opacity: 0.8 }}>
+                        Out of Stock
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="product-info">
                   <div className="product-category">{p.category}</div>
@@ -77,20 +127,60 @@ export default function WishlistPage({ token, onAddToCart, onWishToggle }) {
                         `₹${ep.toFixed(2)}`
                       )}
                     </span>
-                    <button 
-                      className="add-btn" 
-                      disabled={p.stock <= 0} 
-                      style={{ opacity: p.stock <= 0 ? 0.35 : 1, cursor: p.stock <= 0 ? 'not-allowed' : 'pointer' }} 
-                      onClick={() => p.stock > 0 && handleAdd(p)}
-                    >
-                      +
-                    </button>
+                    {cartQty > 0 ? (
+                      <span
+                        className="add-btn"
+                        style={{
+                          background: 'var(--accent)',
+                          color: '#fff',
+                          fontSize: '0.8rem',
+                          fontWeight: '700',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          padding: '2px',
+                          cursor: 'default'
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {cartQty}
+                      </span>
+                    ) : (
+                      <button
+                        className="add-btn"
+                        disabled={p.stock <= 0}
+                        style={{ opacity: p.stock <= 0 ? 0.35 : 1, cursor: p.stock <= 0 ? 'not-allowed' : 'pointer' }}
+                        onClick={(e) => { e.stopPropagation(); if (p.stock > 0) handleAdd(p); }}
+                      >
+                        +
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+      {detailProduct && (
+        <ProductDetailModal
+          product={detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onAddToCart={onAddToCart}
+          onUpdateCartQty={onUpdateCartQty}
+          cart={cart}
+          token={token}
+          wishIds={new Set(items.map(i => i.id))}
+          onWishToggle={(id) => {
+            onWishToggle(id);
+            setItems(prev => prev.filter(item => item.id !== id));
+            setDetailProduct(null);
+          }}
+          onProductClick={(prod) => setDetailProduct(prod)}
+        />
       )}
     </div>
   );

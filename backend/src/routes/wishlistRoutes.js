@@ -7,7 +7,7 @@ const router = express.Router();
 // Get wishlist items
 router.get('/', auth, (req, res) => {
   const items = db.prepare(`
-    SELECT wishlists.id, products.*
+    SELECT products.*, wishlists.id AS wishlist_id
     FROM wishlists JOIN products ON wishlists.product_id = products.id
     WHERE wishlists.user_id = ?
   `).all(req.user.id);

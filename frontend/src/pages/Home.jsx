@@ -5,7 +5,7 @@ import Products from '../components/Products';
 import Newsletter from '../components/Newsletter';
 import Contact from './Contact';
 
-export default function Home({ token, onAddToCart, onAuthRequired, wishIds, onWishToggle, activeCategory, setActiveCategory }) {
+export default function Home({ token, cart, onAddToCart, onUpdateCartQty, onAuthRequired, wishIds, onWishToggle, activeCategory, setActiveCategory }) {
   const scrollShopIntoView = () => {
     document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -19,14 +19,16 @@ export default function Home({ token, onAddToCart, onAuthRequired, wishIds, onWi
     <div className="home-page">
       <Hero onShop={scrollShopIntoView} />
       <CategoryShowcase onCategorySelect={handleCategorySelect} />
-      <Products 
-        token={token} 
-        onAddToCart={onAddToCart} 
-        onAuthRequired={onAuthRequired} 
-        wishIds={wishIds} 
-        onWishToggle={onWishToggle} 
-        activeCategory={activeCategory} 
-        setActiveCategory={setActiveCategory} 
+      <Products
+        token={token}
+        cart={cart}
+        onAddToCart={onAddToCart}
+        onUpdateCartQty={onUpdateCartQty}
+        onAuthRequired={onAuthRequired}
+        wishIds={wishIds}
+        onWishToggle={onWishToggle}
+        activeCategory={activeCategory}
+        setActiveCategory={setActiveCategory}
       />
       <Newsletter />
       <Contact />

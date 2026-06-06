@@ -12,6 +12,6 @@ echo.
 set PATH=%PATH%;C:\Program Files\nodejs
 
 :: Run backend and frontend side-by-side using concurrently
-call npx.cmd --yes concurrently "cd backend && node server.js" "cd frontend && npx.cmd --yes serve -l 3000 ."
+call npx.cmd --yes concurrently "cd backend && node server.js" "cd frontend && npm run dev"
 
 pause
