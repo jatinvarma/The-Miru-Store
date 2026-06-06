@@ -11,9 +11,9 @@ export default function CategoryShowcase({ onCategorySelect }) {
     { title: 'Tech', img: '/img/cat_tech_1776352060324.png' },
     { title: 'Wellness', img: '/img/cat_wellness_1776352078553.png' },
   ];
-  
+
   return (
-    <div className="category-showcase" id="categories">
+    <div className="category-showcase">
       <h2 style={{ fontSize: '2.5rem', marginBottom: '2rem', textAlign: 'center' }}>Shop by Category</h2>
       <div className="category-grid">
         {categories.map(c => (
