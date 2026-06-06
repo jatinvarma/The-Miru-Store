@@ -915,7 +915,7 @@ html[data-theme='dark'] .filter-btn.active {
 
 .qty-btn:hover {
   background: var(--accent);
-  color: white;
+  color: var(--cream);
   border-color: var(--accent);
 }
 
@@ -1061,10 +1061,16 @@ html[data-theme='dark'] .filter-btn.active {
   border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--bg);
+  color: var(--ink);
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   outline: none;
   transition: all .2s;
+}
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.65;
 }
 
 .form-field input:focus,
@@ -3358,7 +3364,7 @@ footer .footer-inner {
   padding: 1.05rem 1.5rem;
   margin-top: 1.25rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--cream);
   border: none;
   border-radius: 14px;
   font-size: 1rem;
@@ -3849,6 +3855,39 @@ footer .footer-inner {
   font-weight: 500;
 }
 
+html[data-theme='dark'] .secure-gateway-card {
+  background: var(--cream);
+  border-color: var(--border);
+  color: var(--ink);
+}
+html[data-theme='dark'] .gateway-brand-bar {
+  background: var(--ink);
+  color: var(--cream);
+}
+html[data-theme='dark'] .gateway-details-grid {
+  border-bottom-color: var(--border);
+}
+html[data-theme='dark'] .gt-label {
+  color: var(--ink-soft);
+}
+html[data-theme='dark'] .gt-val {
+  color: var(--ink);
+}
+html[data-theme='dark'] .gateway-otp-input {
+  border-color: var(--border);
+  background: var(--bg2);
+  color: var(--ink);
+}
+html[data-theme='dark'] .gateway-otp-input:focus {
+  border-color: var(--accent);
+  background: var(--cream);
+}
+html[data-theme='dark'] .gateway-footer {
+  background: var(--bg2);
+  border-top-color: var(--border);
+  color: var(--ink-soft);
+}
+
 .spin-big {
   display: inline-block;
   animation: spin 1s linear infinite;
@@ -3990,7 +4029,7 @@ footer .footer-inner {
 .btn-verify-upi {
   padding: 0.7rem 1rem;
   background: var(--accent);
-  color: white;
+  color: var(--cream);
   border: none;
   border-radius: 10px;
   font-size: 0.8rem;
@@ -4164,6 +4203,49 @@ footer .footer-inner {
   font-weight: 500;
   font-family: 'Inter', sans-serif;
   text-align: center;
+}
+
+/* GPay QR Theme Overrides & Simulation Button */
+html[data-theme='dark'] .gpay-qr-wrapper {
+  background: var(--bg2);
+  border-color: var(--border);
+}
+html[data-theme='dark'] .gpay-profile-name {
+  color: var(--ink);
+}
+html[data-theme='dark'] .gpay-qr-card {
+  background: var(--bg);
+  border-color: var(--border);
+}
+html[data-theme='dark'] .gpay-qr-box {
+  background: var(--bg);
+}
+html[data-theme='dark'] .gpay-qr-logo-center {
+  background: var(--bg);
+  border-color: var(--border);
+}
+html[data-theme='dark'] .gpay-qr-upi-id,
+html[data-theme='dark'] .gpay-qr-footer-text {
+  color: var(--ink-soft);
+}
+
+.upi-qr-sim-btn {
+  padding: 0.5rem 1.05rem;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 0.5rem;
+  font-family: 'Inter', sans-serif;
+}
+.upi-qr-sim-btn:hover {
+  background: var(--accent);
+  color: var(--cream);
+  border-color: var(--accent);
 }
 
 /* --- BRANDED PAYPAL BUTTONS --- */
