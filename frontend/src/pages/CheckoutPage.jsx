@@ -151,11 +151,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
   const [qrSecondsLeft, setQrSecondsLeft] = useState(300);
 
   // PayPal UI states
-  const [paypalModalOpen, setPaypalModalOpen] = useState(false);
-  const [paypalStep, setPaypalStep] = useState('login'); // 'login' or 'authorize'
-  const [paypalEmail, setPaypalEmail] = useState('');
-  const [paypalPassword, setPaypalPassword] = useState('');
-  const [paypalLoading, setPaypalLoading] = useState(false);
+  const [paypalSubMethod, setPaypalSubMethod] = useState('paypal'); // 'paypal' or 'card'
 
   // Simulated Gateway State
   const [showGateway, setShowGateway] = useState(false);
@@ -281,7 +277,68 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
     }
 
     if (payment === 'paypal') {
-      handlePayPalButtonClick();
+      if (paypalSubMethod === 'paypal') {
+        if (!paymentDetails.paypalEmail || !paymentDetails.paypalEmail.includes('@')) {
+          showToast('Please enter a valid PayPal email address.');
+          return;
+        }
+        setLoading(true);
+        try {
+          await submitCheckout({
+            shipping_address: address,
+            payment_method: 'paypal',
+            payment_details: { email: paymentDetails.paypalEmail, method: 'PayPal Account' },
+            coupon_code: coupon?.code,
+            discount_amount: discount
+          });
+        } catch (err) {
+          showToast('Checkout failed. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        const pBrand = getCardBrand(paymentDetails.cardNumber || '');
+        if (!paymentDetails.cardNumber || paymentDetails.cardNumber.length < 12) {
+          showToast('Please enter a valid card number.');
+          return;
+        }
+        if (!validateLuhn(paymentDetails.cardNumber)) {
+          showToast('Invalid card number. Please check the digits.');
+          return;
+        }
+        if (!paymentDetails.expiry || !validateExpiry(paymentDetails.expiry)) {
+          showToast('Please enter a valid expiry date (MM / YY) in the future.');
+          return;
+        }
+        const cvvMin = pBrand === 'amex' ? 4 : 3;
+        if (!paymentDetails.cvv || paymentDetails.cvv.length < cvvMin) {
+          showToast(`Please enter a valid ${cvvMin}-digit CVV.`);
+          return;
+        }
+        if (!paymentDetails.cardHolder || !paymentDetails.cardHolder.trim()) {
+          showToast('Please enter the cardholder\'s name.');
+          return;
+        }
+        setLoading(true);
+        try {
+          await submitCheckout({
+            shipping_address: address,
+            payment_method: 'paypal',
+            payment_details: {
+              cardNumber: paymentDetails.cardNumber,
+              cardHolder: paymentDetails.cardHolder,
+              expiry: paymentDetails.expiry,
+              method: 'PayPal Guest Card'
+            },
+            coupon_code: coupon?.code,
+            discount_amount: discount
+          });
+        } catch (err) {
+          showToast('Checkout failed. Please try again.');
+        } finally {
+          setLoading(false);
+        }
+      }
       return;
     }
 
@@ -400,45 +457,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
     }
   };
 
-  // PayPal Helper methods
-  const handlePayPalButtonClick = () => {
-    setPaypalEmail('');
-    setPaypalPassword('');
-    setPaypalStep('login');
-    setPaypalModalOpen(true);
-  };
 
-  const handlePayPalLogin = () => {
-    if (!paypalEmail || !paypalPassword) {
-      showToast('Please enter your PayPal email and password.');
-      return;
-    }
-    setPaypalLoading(true);
-    setTimeout(() => {
-      setPaypalLoading(false);
-      setPaypalStep('authorize');
-    }, 1500);
-  };
-
-  const handlePayPalPayment = async () => {
-    setPaypalLoading(true);
-    setTimeout(async () => {
-      try {
-        await submitCheckout({
-          shipping_address: address,
-          payment_method: 'paypal',
-          payment_details: { email: paypalEmail, method: 'PayPal Checkout' },
-          coupon_code: coupon?.code,
-          discount_amount: discount
-        });
-        setPaypalModalOpen(false);
-        setPaypalLoading(false);
-      } catch (err) {
-        showToast('PayPal Checkout failed. Please try again.');
-        setPaypalLoading(false);
-      }
-    }, 2000);
-  };
 
   const cardBrand = getCardBrand(paymentDetails.cardNumber);
 
@@ -868,35 +887,96 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
                 {/* PayPal */}
                 {payment === 'paypal' && (
                   <div className="co-card-area">
-                    <div className="paypal-compact-row">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <PayPalSVG />
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Pay with PayPal</div>
-                          <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>Safe. Fast. Secure.</div>
-                        </div>
-                      </div>
-
-                      <div className="paypal-btn-group" style={{ marginTop: 0 }}>
-                        <button
-                          type="button"
-                          className="paypal-branded-btn pp-yellow"
-                          onClick={handlePayPalButtonClick}
-                        >
-                          <PayPalSVG />
-                        </button>
-                        <button
-                          type="button"
-                          className="paypal-branded-btn pp-black"
-                          onClick={handlePayPalButtonClick}
-                        >
-                          Debit or Credit Card
-                        </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                      <PayPalSVG />
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Pay with PayPal</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>Choose your preferred funding source below.</div>
                       </div>
                     </div>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', textAlign: 'center', marginTop: '0.75rem' }}>
-                      Click either button to open the PayPal secure payment checkout.
-                    </p>
+
+                    <div className="pay-method-tabs" style={{ gridTemplateColumns: '1fr 1fr', marginBottom: '1.25rem' }}>
+                      <button
+                        type="button"
+                        className={`pay-tab ${paypalSubMethod === 'paypal' ? 'active' : ''}`}
+                        onClick={() => setPaypalSubMethod('paypal')}
+                        style={{ padding: '0.65rem' }}
+                      >
+                        <PayPalSVG />
+                        <span style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>PayPal Account</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`pay-tab ${paypalSubMethod === 'card' ? 'active' : ''}`}
+                        onClick={() => setPaypalSubMethod('card')}
+                        style={{ padding: '0.65rem' }}
+                      >
+                        <span style={{ display: 'flex', gap: '4px', height: '14px', alignItems: 'center' }}><VisaSVG /><McSVG /><AmexSVG /></span>
+                        <span style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>Debit or Credit Card</span>
+                      </button>
+                    </div>
+
+                    {paypalSubMethod === 'paypal' ? (
+                      <div className="form-field fade-in" style={{ marginTop: '0.5rem' }}>
+                        <label>PayPal Email Address</label>
+                        <input
+                          type="email"
+                          value={paymentDetails.paypalEmail || ''}
+                          onChange={e => setPaymentDetails({ ...paymentDetails, paypalEmail: e.target.value })}
+                          placeholder="name@example.com"
+                          style={{ width: '100%', boxSizing: 'border-box' }}
+                        />
+                        <p style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', marginTop: '0.5rem' }}>
+                          Checkout immediately using your PayPal wallet credentials.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="fade-in" style={{ marginTop: '0.5rem' }}>
+                        <div className="form-field" style={{ marginBottom: '0.75rem' }}>
+                          <label>Card Number</label>
+                          <input
+                            placeholder="1234 5678 9012 3456"
+                            value={fmtCard(paymentDetails.cardNumber || '', getCardBrand(paymentDetails.cardNumber || ''))}
+                            onChange={e => setPaymentDetails({ ...paymentDetails, cardNumber: e.target.value.replace(/\s/g, '') })}
+                            maxLength={getCardBrand(paymentDetails.cardNumber || '') === 'amex' ? 17 : 19}
+                            style={{ fontFamily: "'DM Mono', monospace", letterSpacing: '0.06em' }}
+                          />
+                        </div>
+
+                        <div className="form-field" style={{ marginBottom: '0.75rem' }}>
+                          <label>Cardholder Name</label>
+                          <input
+                            placeholder="Jane Doe"
+                            value={paymentDetails.cardHolder || ''}
+                            onChange={e => setPaymentDetails({ ...paymentDetails, cardHolder: e.target.value })}
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                          <div className="form-field" style={{ marginBottom: 0 }}>
+                            <label>Expiry Date</label>
+                            <input
+                              placeholder="MM / YY"
+                              value={paymentDetails.expiry || ''}
+                              onChange={e => handleExpiryChange(e.target.value)}
+                              maxLength={7}
+                              style={{ fontFamily: "'DM Mono', monospace" }}
+                            />
+                          </div>
+                          <div className="form-field" style={{ marginBottom: 0 }}>
+                            <label>CVV</label>
+                            <input
+                              placeholder="•••"
+                              type="password"
+                              value={paymentDetails.cvv || ''}
+                              onChange={e => setPaymentDetails({ ...paymentDetails, cvv: e.target.value.replace(/\D/g, '') })}
+                              maxLength={getCardBrand(paymentDetails.cardNumber || '') === 'amex' ? 4 : 3}
+                              style={{ fontFamily: "'DM Mono', monospace" }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1035,98 +1115,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         </div>
       )}
 
-      {/* ── SIMULATED PAYPAL GATEWAY MODAL OVERLAY ── */}
-      {paypalModalOpen && (
-        <div className="paypal-modal-overlay">
-          <div className="paypal-modal">
-            <div className="paypal-modal-header">
-              <svg viewBox="0 0 100 28" height="22" className="paypal-modal-logo" style={{ display: 'block' }}>
-                <path d="M12.3,2.4C10.9,2.4,9.6,3,8.7,4C7.8,3,6.5,2.4,5.1,2.4H0.5v22.8h4.6V16.7h0.5c3.8,0,7.1-2.1,8.3-5.5 c0.8-2.3,0.5-4.8-0.9-6.8C12.8,2.7,12.6,2.5,12.3,2.4z M9.1,11.2c-0.6,1.7-2.2,2.8-4,2.8H4.6V7.1h0.5c1.8,0,3.4,1.1,4,2.8 c0.3,0.8,0.2,1.7-0.1,2.5C9,12.5,9,12.5,9.1,11.2z" fill="#003087" />
-                <path d="M30.4,2.4C29,2.4,27.7,3,26.8,4c-0.9-1-2.2-1.6-3.6-1.6h-4.6v22.8h4.6V16.7h0.5c3.8,0,7.1-2.1,8.3-5.5 c0.8-2.3,0.5-4.8-0.9-6.8C30.9,2.7,30.7,2.5,30.4,2.4z M27.2,11.2c-0.6,1.7-2.2,2.8-4,2.8h-0.5V7.1h0.5c1.8,0,3.4,1.1,4,2.8 c0.3,0.8,0.2,1.7-0.1,2.5C27.1,12.5,27.1,12.5,27.2,11.2z" fill="#0079C1" />
-                <path d="M47.7,2.4h-4.6L38,25.2h4.6l1.2-5.4h4.4c4.6,0,8.3-3.6,8.7-8.1c0.2-2.3-0.5-4.5-2.1-6.1S50.9,2.4,47.7,2.4z M47.3,14.4 h-3.3l1-4.8h3.3c1.7,0,3.1,1.4,3.1,3.1C51.4,13.8,50,14.4,47.3,14.4z" fill="#00457C" />
-                <path d="M66.4,2.4h-4.6l-5.1,22.8h4.6l1.2-5.4h4.4c4.6,0,8.3-3.6,8.7-8.1c0.2-2.3-0.5-4.5-2.1-6.1S69.6,2.4,66.4,2.4z M66,14.4 h-3.3l1-4.8H66c1.7,0,3.1,1.4,3.1,3.1C70.1,13.8,68.7,14.4,66,14.4z" fill="#0079C1" />
-                <path d="M83,2.4L73.9,25.2h4.6l1.8-4.6h5.7l0.8,4.6h4.6L87.8,2.4H83z M86.4,15.6h-4.1l2.1-5.3L86.4,15.6z" fill="#00457C" />
-                <path d="M96,2.4v22.8h4V2.4H96z" fill="#0079C1" />
-              </svg>
-            </div>
 
-            {paypalLoading ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
-                <div className="spin-big" style={{ border: '3px solid #f3f3f3', borderTop: '3px solid #0070ba', borderRadius: '50%', width: '40px', height: '40px', display: 'inline-block' }}></div>
-                <p style={{ marginTop: '1.5rem', color: '#666', fontSize: '0.9rem', fontWeight: 500 }}>Processing secure transaction...</p>
-              </div>
-            ) : (
-              <>
-                {paypalStep === 'login' ? (
-                  <div className="paypal-modal-body fade-in">
-                    <h3 className="paypal-modal-title">Pay with PayPal</h3>
-                    <p className="paypal-modal-sub">Enter your credentials to access your PayPal wallet.</p>
-
-                    <div className="paypal-input-group">
-                      <label>Email Address</label>
-                      <input
-                        type="email"
-                        value={paypalEmail}
-                        onChange={e => setPaypalEmail(e.target.value)}
-                        placeholder="name@example.com"
-                      />
-                    </div>
-                    <div className="paypal-input-group">
-                      <label>Password</label>
-                      <input
-                        type="password"
-                        value={paypalPassword}
-                        onChange={e => setPaypalPassword(e.target.value)}
-                        placeholder="••••••••"
-                      />
-                    </div>
-
-                    <button className="paypal-btn-primary" onClick={handlePayPalLogin}>Log In</button>
-                    <button className="paypal-btn-secondary" onClick={() => setPaypalModalOpen(false)}>Cancel</button>
-                  </div>
-                ) : (
-                  <div className="paypal-modal-body fade-in">
-                    <h3 className="paypal-modal-title" style={{ textAlign: 'left', marginBottom: '1rem', fontSize: '1rem' }}>Review your payment</h3>
-
-                    <div className="paypal-details-panel">
-                      <div className="paypal-details-row">
-                        <span>Merchant</span>
-                        <span style={{ fontWeight: 600 }}>Miru Store</span>
-                      </div>
-                      <div className="paypal-details-row">
-                        <span>Shipping to</span>
-                        <span style={{ fontWeight: 600 }}>{address.street}, {address.city}</span>
-                      </div>
-                      <div className="paypal-details-row">
-                        <span>Total amount</span>
-                        <span style={{ fontWeight: 700 }}>₹{total.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    <div className="paypal-input-group" style={{ marginBottom: '1.25rem' }}>
-                      <label>Funding Source</label>
-                      <div className="paypal-funding-source">
-                        <input type="radio" defaultChecked id="pp-bal" name="funding" />
-                        <label htmlFor="pp-bal" className="paypal-funding-info" style={{ cursor: 'pointer', marginLeft: '6px' }}>
-                          <span className="paypal-funding-title">PayPal Balance</span>
-                          <span className="paypal-funding-sub">Available: ₹25,480.00</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <button className="paypal-btn-primary" onClick={handlePayPalPayment}>Pay Now</button>
-                    <button className="paypal-btn-secondary" onClick={() => setPaypalStep('login')}>Back</button>
-                  </div>
-                )}
-              </>
-            )}
-
-            <div className="paypal-modal-footer">
-              🔒 Secure SSL Encrypted Connection by PayPal Inc.
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── SIMULATED PAYMENT GATEWAY DIALOG ── */}
       {showGateway && (
