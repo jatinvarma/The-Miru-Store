@@ -45,4 +45,3 @@ export default function Home({ token, cart, onAddToCart, onUpdateCartQty, onAuth
     </div>
   );
 }
-
