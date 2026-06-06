@@ -7,19 +7,29 @@ const ORDER_STEPS = ['confirmed', 'packed', 'shipped', 'delivered'];
 function OrderTimeline({ status }) {
   const idx = ORDER_STEPS.indexOf(status);
   const cancelled = status === 'cancelled';
+
+  if (cancelled) {
+    return <div className="order-timeline-cancelled">This order has been cancelled</div>;
+  }
+
+  // Calculate percentage progress track width
+  const progressPct = idx >= 0 ? (idx / (ORDER_STEPS.length - 1)) * 100 : 0;
+
   return (
     <div className="order-timeline">
-      {ORDER_STEPS.map((s, i) => (
-        <div key={s} className={`timeline-step ${cancelled ? 'cancelled' : i <= idx ? 'done' : ''}`}>
-          <div className="timeline-dot">
-            {cancelled && i === 0 ? '✕' : i < idx ? '✓' : i === idx && !cancelled ? '●' : ''}
+      <div className="order-timeline-progress" style={{ width: `${progressPct}%` }} />
+      {ORDER_STEPS.map((s, i) => {
+        const isCompleted = i < idx;
+        const isActive = i === idx;
+        return (
+          <div key={s} className={`timeline-step ${isCompleted ? 'completed' : ''} ${isActive ? 'active' : ''}`}>
+            <div className="timeline-bubble">
+              {isCompleted ? '✓' : isActive ? '●' : i + 1}
+            </div>
+            <div className="timeline-label" style={{ textTransform: 'capitalize' }}>{s}</div>
           </div>
-          <div className="timeline-label">{s}</div>
-          {i < ORDER_STEPS.length - 1 && (
-            <div className={`timeline-line ${!cancelled && i < idx ? 'done' : ''}`} />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

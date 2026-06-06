@@ -41,14 +41,58 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, onUp
     api.get(`/products?category=${product.category}`).then(d => setRelated(Array.isArray(d) ? d.filter(p => p.id !== product.id).slice(0, 3) : []));
   }, [product.id]);
 
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadPreview, setUploadPreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image size must be less than 5MB');
+      return;
+    }
+    setSelectedFile(file);
+    setUploadPreview(URL.createObjectURL(file));
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    setUploadPreview('');
+  };
+
   const submitReview = async () => {
     if (!token) { showToast('Sign in to leave a review'); return; }
     if (!newRating) { showToast('Please select a star rating'); return; }
-    const data = await api.post(`/products/${product.id}/reviews`, { rating: newRating, comment: newComment });
+    
+    setUploading(true);
+    let imageUrl = null;
+    if (selectedFile) {
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      const uploadData = await api.postMultipart('/upload', formData);
+      if (uploadData.url) {
+        imageUrl = uploadData.url;
+      } else {
+        showToast(uploadData.error || 'Failed to upload image');
+        setUploading(false);
+        return;
+      }
+    }
+
+    const data = await api.post(`/products/${product.id}/reviews`, { 
+      rating: newRating, 
+      comment: newComment,
+      image: imageUrl 
+    });
+    setUploading(false);
+
     if (data.id) {
       setReviews([{ ...data, user_name: 'You' }, ...reviews]);
       setNewRating(0);
       setNewComment('');
+      setSelectedFile(null);
+      setUploadPreview('');
       showToast('Review posted!');
     } else {
       showToast(data.error || 'Could not post review');
@@ -186,6 +230,14 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, onUp
                   <Stars rating={r.rating} />
                 </div>
                 <p className="review-text">{r.comment}</p>
+                {r.image && (
+                  <img 
+                    src={r.image.startsWith('/') ? 'http://localhost:3001' + r.image : r.image} 
+                    alt="Review attachment" 
+                    className="review-attached-img"
+                    onClick={() => window.open(r.image.startsWith('/') ? 'http://localhost:3001' + r.image : r.image, '_blank')}
+                  />
+                )}
               </div>
             ))}
 
@@ -220,7 +272,34 @@ export default function ProductDetailModal({ product, onClose, onAddToCart, onUp
                   outline: 'none'
                 }}
               />
-              <button className="btn btn-primary btn-sm" style={{ marginTop: '0.5rem' }} onClick={submitReview}>Post Review</button>
+              
+              <div className="review-file-input-wrapper">
+                <label className="review-file-input-label">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ display: 'inline', marginRight: '6px' }}>
+                    <path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2z" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span>Add Photo</span>
+                  <input type="file" accept="image/*" onChange={handleFileChange} />
+                </label>
+                
+                {uploadPreview && (
+                  <div className="review-upload-preview">
+                    <img src={uploadPreview} alt="Upload preview" />
+                    <button type="button" className="review-upload-preview-remove" onClick={removeSelectedFile}>Remove</button>
+                  </div>
+                )}
+              </div>
+
+              <button 
+                className="btn btn-primary btn-sm" 
+                style={{ marginTop: '0.75rem' }} 
+                onClick={submitReview}
+                disabled={uploading}
+              >
+                {uploading ? 'Uploading...' : 'Post Review'}
+              </button>
             </div>
           </div>
         </div>

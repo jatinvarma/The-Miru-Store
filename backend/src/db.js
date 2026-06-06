@@ -102,6 +102,13 @@ try {
   // Column already exists or other error (ignored)
 }
 
+// Add image column to reviews if it doesn't exist
+try {
+  db.exec('ALTER TABLE reviews ADD COLUMN image TEXT;');
+} catch (e) {
+  // Column already exists or other error (ignored)
+}
+
 // ── SEED PRODUCTS ─────────────────────────────────────────────
 const existingProducts = db.prepare('SELECT COUNT(*) as count FROM products').get();
 if (existingProducts.count === 0) {

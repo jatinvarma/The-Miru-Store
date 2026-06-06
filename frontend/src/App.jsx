@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Nav from './components/Nav';
+import CartDrawer from './components/CartDrawer';
 import ChatWidget from './components/ChatWidget';
 import ScrollToTopFAB from './components/ScrollToTopFAB';
 import AuthModal from './components/AuthModal';
@@ -31,6 +32,7 @@ export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('miru_theme') || 'light');
   const [cart, setCart] = useState([]);
   const [authOpen, setAuthOpen] = useState(false);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [page, setPage] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [wishIds, setWishIds] = useState(new Set());
@@ -121,6 +123,7 @@ export default function App() {
     if (!cartItem) {
       if (quantity > 0) {
         await api.post('/cart', { product_id: productId, quantity });
+        setCartDrawerOpen(true); // Auto-open on addition
       }
     } else {
       if (quantity < 1) {
@@ -156,7 +159,7 @@ export default function App() {
       <Nav
         user={user}
         cartCount={cartCount}
-        onCartOpen={() => setPage('cart')}
+        onCartOpen={() => setCartDrawerOpen(true)}
         onAuthOpen={() => setAuthOpen(true)}
         onLogout={handleLogout}
         page={page}
@@ -164,6 +167,14 @@ export default function App() {
         theme={theme}
         toggleTheme={toggleTheme}
         isAdmin={isAdmin}
+      />
+
+      <CartDrawer
+        isOpen={cartDrawerOpen}
+        onClose={() => setCartDrawerOpen(false)}
+        cart={cart}
+        onUpdateCartQty={updateCartQty}
+        onCheckout={() => setPage('checkout')}
       />
 
       {page === 'home' && (

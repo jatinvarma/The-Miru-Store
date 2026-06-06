@@ -67,14 +67,14 @@ router.get('/:id/reviews', (req, res) => {
 
 // Post review
 router.post('/:id/reviews', auth, (req, res) => {
-  const { rating, comment } = req.body;
+  const { rating, comment, image } = req.body;
   if (!rating || rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating 1-5 required' });
   const existing = db.prepare('SELECT id FROM reviews WHERE user_id = ? AND product_id = ?').get(req.user.id, req.params.id);
   if (existing) return res.status(409).json({ error: 'You have already reviewed this product' });
   try {
-    const result = db.prepare('INSERT INTO reviews (user_id, product_id, rating, comment) VALUES (?, ?, ?, ?)')
-      .run(req.user.id, req.params.id, rating, comment || '');
-    res.json({ id: result.lastInsertRowid, rating, comment, user_name: req.user.name });
+    const result = db.prepare('INSERT INTO reviews (user_id, product_id, rating, comment, image) VALUES (?, ?, ?, ?, ?)')
+      .run(req.user.id, req.params.id, rating, comment || '', image || null);
+    res.json({ id: result.lastInsertRowid, rating, comment, image: image || null, user_name: req.user.name });
   } catch (e) {
     res.status(500).json({ error: 'Could not save review' });
   }

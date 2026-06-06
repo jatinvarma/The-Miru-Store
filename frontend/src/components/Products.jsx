@@ -16,6 +16,22 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
   const [detailProduct, setDetailProduct] = useState(null);
   const api = useApi(token);
 
+  // Suggestions state
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState([]);
+
+  useEffect(() => {
+    if (!search.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      const data = await api.get(`/products?search=${encodeURIComponent(search)}`);
+      setSuggestions(Array.isArray(data) ? data.slice(0, 5) : []);
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const cats = ['All', 'Accessories', 'Home', 'Kitchen', 'Apparel', 'Furniture', 'Workspace', 'Tech', 'Wellness'];
 
   const load = useCallback(async () => {
@@ -60,11 +76,41 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
       </div>
       <div className="sticky-filters">
         <div className="search-bar" style={{ marginBottom: '1rem' }}>
-          <input
-            placeholder="Search products..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <div 
+            className="search-bar-wrapper"
+            onMouseLeave={() => setShowSuggestions(false)}
+          >
+            <input
+              placeholder="Search products..."
+              value={search}
+              onChange={e => {
+                setSearch(e.target.value);
+                setShowSuggestions(true);
+              }}
+              onFocus={() => setShowSuggestions(true)}
+            />
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="search-suggestions-dropdown">
+                {suggestions.map(s => (
+                  <div 
+                    key={s.id} 
+                    className="suggestion-item"
+                    onClick={() => {
+                      setDetailProduct(s);
+                      setShowSuggestions(false);
+                      setSearch('');
+                    }}
+                  >
+                    <img src={s.image} alt={s.name} className="suggestion-thumb" />
+                    <div className="suggestion-info">
+                      <div className="suggestion-name">{s.name}</div>
+                      <div className="suggestion-cat-price">{s.category} · ₹{s.price.toFixed(2)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <select value={sort} onChange={e => setSort(e.target.value)}>
             <option value="default">Featured</option>
             <option value="price_asc">Price ↑</option>
