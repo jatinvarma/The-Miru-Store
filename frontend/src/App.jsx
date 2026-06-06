@@ -36,6 +36,8 @@ export default function App() {
   const [page, setPage] = useState('home');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [wishIds, setWishIds] = useState(new Set());
+  const [preloaderActive, setPreloaderActive] = useState(true);
+  const [preloaderFade, setPreloaderFade] = useState(false);
 
   const api = useApi(token);
   const isAdmin = user?.email === ADMIN_EMAIL;
@@ -43,6 +45,21 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => {
+      setPreloaderFade(true);
+    }, 1500);
+
+    const removeTimer = setTimeout(() => {
+      setPreloaderActive(false);
+    }, 2300);
+
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
+    };
+  }, []);
 
   const loadCart = useCallback(async () => {
     if (!token) { setCart([]); return; }
@@ -156,6 +173,18 @@ export default function App() {
 
   return (
     <>
+      {preloaderActive && (
+        <div className={`welcome-preloader ${preloaderFade ? 'fade-out' : ''}`}>
+          <div className="preloader-content">
+            <div className="preloader-logo">MIRU<span>.</span></div>
+            <div className="preloader-line">
+              <div className="preloader-progress" />
+            </div>
+            <p className="preloader-subtitle">Curated objects for a considered life</p>
+          </div>
+        </div>
+      )}
+
       <Nav
         user={user}
         cartCount={cartCount}
