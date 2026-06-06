@@ -281,7 +281,7 @@ export default function App() {
               <a onClick={() => setPage('privacy-policy')}>Privacy Policy</a>
             </div>
           </div>
-          <div style={{ borderTop: '1px solid var(--border)', padding: '1.25rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 0 0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', maxWidth: '1300px', margin: '0 auto' }}>
             <div className="footer-copy">© 2026 MIRU. All rights reserved.</div>
             <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)' }}>hello@miru.co &nbsp;·&nbsp; Mon–Fri 9am–6pm</div>
           </div>
