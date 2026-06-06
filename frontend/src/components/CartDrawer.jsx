@@ -1,16 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 export default function CartDrawer({ isOpen, onClose, cart, onUpdateCartQty, onCheckout }) {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
   const subtotal = cart.reduce((s, i) => {
     const p = i.is_sale && i.sale_price ? i.sale_price : i.price;
     return s + p * i.quantity;

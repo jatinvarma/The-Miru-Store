@@ -120,8 +120,20 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
   const [couponCode, setCouponCode] = useState('');
   const [coupon, setCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
-  const [paymentError, setPaymentError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const [activeStep, setActiveStep] = useState(1); // 1 = Shipping, 2 = Payment
+  const [shippingError, setShippingError] = useState('');
+
+  const validateShipping = () => {
+    if (!address.street.trim() || !address.city.trim() || !address.state.trim() || !address.zip.trim()) {
+      setShippingError('Please complete all shipping fields.');
+      showToast('Please complete all shipping fields.');
+      return false;
+    }
+    setShippingError('');
+    return true;
+  };
 
   // Global Checkout Session Timer state (5 minutes)
   const [sessionSecondsLeft, setSessionSecondsLeft] = useState(300);
@@ -206,57 +218,65 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
 
   const handleCheckoutClick = async () => {
     if (sessionSecondsLeft === 0) {
-      setPaymentError('Checkout session has expired. Please return to cart.');
+      showToast('Checkout session has expired. Please return to cart.');
+      return;
+    }
+
+    if (activeStep === 1) {
+      if (validateShipping()) {
+        setActiveStep(2);
+      }
       return;
     }
 
     if (!address.street || !address.city || !address.state || !address.zip) {
-      setPaymentError('Please complete all shipping fields before proceeding.');
+      showToast('Please complete all shipping fields.');
+      setActiveStep(1);
       return;
     }
 
     if (payment === 'credit_card') {
       const cardBrand = getCardBrand(paymentDetails.cardNumber);
       if (!paymentDetails.cardNumber || paymentDetails.cardNumber.length < 12) {
-        setPaymentError('Please enter a valid card number.');
+        showToast('Please enter a valid card number.');
         return;
       }
       if (!validateLuhn(paymentDetails.cardNumber)) {
-        setPaymentError('Invalid card number. Please check the digits and try again.');
+        showToast('Invalid card number. Please check the digits.');
         return;
       }
       if (!paymentDetails.expiry || !validateExpiry(paymentDetails.expiry)) {
-        setPaymentError('Please enter a valid expiry date (MM / YY) in the future.');
+        showToast('Please enter a valid expiry date (MM / YY) in the future.');
         return;
       }
       const cvvMin = cardBrand === 'amex' ? 4 : 3;
       if (!paymentDetails.cvv || paymentDetails.cvv.length < cvvMin) {
-        setPaymentError(`Please enter a valid ${cvvMin}-digit CVV.`);
+        showToast(`Please enter a valid ${cvvMin}-digit CVV.`);
         return;
       }
       if (!paymentDetails.cardHolder || !paymentDetails.cardHolder.trim()) {
-        setPaymentError("Please enter the cardholder's name.");
+        showToast('Please enter the cardholder\'s name.');
         return;
       }
     }
 
     if (payment === 'upi') {
       if (!paymentDetails.upiId) {
-        setPaymentError('Please enter your UPI ID.');
+        showToast('Please enter your UPI ID.');
         return;
       }
       if (!upiVerified) {
-        setPaymentError('Please verify your UPI ID first.');
+        showToast('Please verify your UPI ID first.');
         return;
       }
     }
 
     if (payment === 'upi_qr') {
       if (qrSecondsLeft === 0) {
-        setPaymentError('QR Code has expired. Please regenerate to pay.');
+        showToast('QR Code has expired. Please regenerate to pay.');
         return;
       }
-      setPaymentError('Please scan the QR code to complete payment.');
+      showToast('Please scan the QR code to complete payment.');
       return;
     }
 
@@ -299,8 +319,8 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         setShowGateway(false);
         setLoading(false);
       } catch (err) {
-        setPaymentError('Payment rejected by issuer. Please check your card details or try another card.');
-        setShowGateway(false);
+        setGatewayError('Payment rejected by issuer. Please try again.');
+        setGatewayStep('otp');
         setLoading(false);
       }
     }, 2000);
@@ -358,7 +378,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         discount_amount: discount
       });
     } catch (err) {
-      setPaymentError('Checkout failed. Please try again.');
+      showToast('Checkout failed. Please try again.');
       setLoading(false);
     }
   };
@@ -375,7 +395,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         discount_amount: discount
       });
     } catch (err) {
-      setPaymentError('Checkout failed. Please try again.');
+      showToast('Checkout failed. Please try again.');
       setLoading(false);
     }
   };
@@ -414,7 +434,7 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
         setPaypalModalOpen(false);
         setPaypalLoading(false);
       } catch (err) {
-        setPaymentError('PayPal Checkout failed. Please try again.');
+        showToast('PayPal Checkout failed. Please try again.');
         setPaypalLoading(false);
       }
     }, 2000);
@@ -482,27 +502,63 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
           </div>
 
           {/* STEP 1 — Shipping */}
-          <div className="co-step-card">
-            <div className="co-step-header">
+          <div className={`co-step-card ${activeStep === 1 ? 'active-card' : 'collapsed-card'}`}>
+            <div 
+              className="co-step-header" 
+              style={{ cursor: activeStep > 1 ? 'pointer' : 'default' }}
+              onClick={() => activeStep > 1 && setActiveStep(1)}
+            >
               <span className="co-step-num">1</span>
               <div>
-                <div className="co-step-title">Shipping Address</div>
-                <div className="co-step-sub">Where should we send your order?</div>
+                <div className="co-step-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  Shipping Address
+                  {activeStep > 1 && <span style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 'normal' }}>(Click to Edit)</span>}
+                </div>
+                {shippingError && activeStep === 1 ? (
+                  <div className="co-step-sub" style={{ color: 'var(--red)', fontWeight: 'bold' }}>
+                    ⚠️ {shippingError}
+                  </div>
+                ) : (
+                  <div className="co-step-sub">Where should we send your order?</div>
+                )}
               </div>
-              <svg className="co-step-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+              {activeStep > 1 ? (
+                <span style={{ color: 'var(--green)', fontWeight: 'bold', fontSize: '0.8rem' }}>✓ Completed</span>
+              ) : (
+                <svg className="co-step-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+              )}
             </div>
-            <div className="co-step-body">
-              <div className="form-field"><label>Street Address</label><input value={address.street} onChange={e => setAddress({ ...address, street: e.target.value })} placeholder="123 Main Street, Apt 4B" /></div>
-              <div className="form-field"><label>City</label><input value={address.city} onChange={e => setAddress({ ...address, city: e.target.value })} placeholder="Mumbai" /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>State</label><input value={address.state} onChange={e => setAddress({ ...address, state: e.target.value })} placeholder="Maharashtra" /></div>
-                <div className="form-field" style={{ marginBottom: 0 }}><label>PIN Code</label><input value={address.zip} onChange={e => setAddress({ ...address, zip: e.target.value })} placeholder="400001" /></div>
+            {activeStep === 1 ? (
+              <div className="co-step-body fade-in" style={{ padding: '0.5rem 1.5rem 1.5rem' }}>
+                <div className="form-field"><label>Street Address</label><input value={address.street} onChange={e => { setAddress({ ...address, street: e.target.value }); setShippingError(''); }} placeholder="123 Main Street, Apt 4B" /></div>
+                <div className="co-shipping-grid">
+                  <div className="form-field" style={{ marginBottom: 0 }}><label>City</label><input value={address.city} onChange={e => { setAddress({ ...address, city: e.target.value }); setShippingError(''); }} placeholder="Mumbai" /></div>
+                  <div className="form-field" style={{ marginBottom: 0 }}><label>State</label><input value={address.state} onChange={e => { setAddress({ ...address, state: e.target.value }); setShippingError(''); }} placeholder="Maharashtra" /></div>
+                  <div className="form-field" style={{ marginBottom: 0 }}><label>PIN Code</label><input value={address.zip} onChange={e => { setAddress({ ...address, zip: e.target.value }); setShippingError(''); }} placeholder="400001" /></div>
+                </div>
+                <button 
+                  type="button" 
+                  className="btn btn-primary" 
+                  style={{ width: '100%', padding: '0.85rem', marginTop: '1.25rem' }}
+                  onClick={() => {
+                    if (validateShipping()) {
+                      setActiveStep(2);
+                    }
+                  }}
+                >
+                  Proceed to Payment
+                </button>
               </div>
-            </div>
+            ) : (
+              <div className="co-step-body-summary fade-in" style={{ padding: '0.5rem 1.5rem 1.5rem', fontSize: '0.85rem', color: 'var(--ink-soft)', background: 'var(--bg2)', borderRadius: '0 0 16px 16px' }}>
+                <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{address.street}</div>
+                <div>{address.city}, {address.state} - {address.zip}</div>
+              </div>
+            )}
           </div>
 
           {/* STEP 2 — Payment */}
-          <div className="co-step-card">
+          <div className={`co-step-card ${activeStep === 2 ? 'active-card' : 'collapsed-card'}`} style={{ opacity: activeStep === 1 ? 0.6 : 1, transition: 'opacity 0.3s' }}>
             <div className="co-step-header">
               <span className="co-step-num">2</span>
               <div>
@@ -511,217 +567,214 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
               </div>
               <svg className="co-step-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" /></svg>
             </div>
-            <div className="co-step-body">
+            
+            {activeStep === 2 && (
+              <div className="co-step-body fade-in" style={{ padding: '0.5rem 1.5rem 1.5rem' }}>
 
-              {/* Payment method tabs */}
-              <div className="pay-method-tabs">
-                {payMethods.map(m => (
-                  <button
-                    key={m.id}
-                    className={`pay-tab ${payment === m.id ? 'active' : ''}`}
-                    onClick={() => {
-                      setPayment(m.id);
-                      setCardFlipped(false);
-                    }}
-                  >
-                    <m.Logo />
-                    <span>{m.label}</span>
-                  </button>
-                ))}
-              </div>
+                {/* Payment method tabs */}
+                <div className="pay-method-tabs">
+                  {payMethods.map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className={`pay-tab ${payment === m.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setPayment(m.id);
+                        setCardFlipped(false);
+                      }}
+                    >
+                      <m.Logo />
+                      <span>{m.label}</span>
+                    </button>
+                  ))}
+                </div>
 
-              {/* Credit card inputs */}
-              {payment === 'credit_card' && (
-                <div className="co-card-area">
-                  {/* Visual card */}
-                  <div className="card-container-3d">
-                    <div className={`cc-card-flipper ${cardFlipped ? 'flipped' : ''}`}>
+                {/* Credit card inputs */}
+                {payment === 'credit_card' && (
+                  <div className="co-card-area">
+                    <div className="cc-payment-compact-row">
+                      {/* Visual card */}
+                      <div className="card-container-3d" style={{ marginBottom: 0 }}>
+                        <div className={`cc-card-flipper ${cardFlipped ? 'flipped' : ''}`}>
 
-                      {/* Front Face */}
-                      <div className={`cc-card-front brand-${cardBrand}`}>
-                        <div className="cc-preview-top">
-                          <span className="cc-chip">
-                            <svg width="28" height="22" viewBox="0 0 28 22" fill="none"><rect width="28" height="22" rx="3" fill="#D4A96A" opacity=".9" /><rect x="2" y="7" width="24" height="8" rx="1" fill="none" stroke="#B8933A" strokeWidth="0.7" /><line x1="14" y1="7" x2="14" y2="15" stroke="#B8933A" strokeWidth="0.7" /><line x1="2" y1="11" x2="26" y2="11" stroke="#B8933A" strokeWidth="0.7" /></svg>
-                          </span>
-                          <span className="cc-brand-logos">
-                            {cardBrand === 'visa' && <VisaSVG />}
-                            {cardBrand === 'mastercard' && <McSVG />}
-                            {cardBrand === 'rupay' && <RuPaySVG />}
-                            {cardBrand === 'amex' && <AmexSVG />}
-                          </span>
-                        </div>
-                        <div className="cc-number">
-                          {paymentDetails.cardNumber
-                            ? fmtCard(paymentDetails.cardNumber, cardBrand)
-                            : cardBrand === 'amex'
-                              ? '•••• •••••• •••••'
-                              : '•••• •••• •••• ••••'}
-                        </div>
-                        <div className="cc-bottom">
-                          <div style={{ flex: 1 }}>
-                            <div className="cc-label">Card Holder</div>
-                            <div className="cc-value" style={{ textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
-                              {paymentDetails.cardHolder || 'YOUR NAME'}
+                          {/* Front Face */}
+                          <div className={`cc-card-front brand-${cardBrand}`}>
+                            <div className="cc-preview-top">
+                              <span className="cc-chip">
+                                <svg width="28" height="22" viewBox="0 0 28 22" fill="none"><rect width="28" height="22" rx="3" fill="#D4A96A" opacity=".9" /><rect x="2" y="7" width="24" height="8" rx="1" fill="none" stroke="#B8933A" strokeWidth="0.7" /><line x1="14" y1="7" x2="14" y2="15" stroke="#B8933A" strokeWidth="0.7" /><line x1="2" y1="11" x2="26" y2="11" stroke="#B8933A" strokeWidth="0.7" /></svg>
+                              </span>
+                              <span className="cc-brand-logos">
+                                {cardBrand === 'visa' && <VisaSVG />}
+                                {cardBrand === 'mastercard' && <McSVG />}
+                                {cardBrand === 'rupay' && <RuPaySVG />}
+                                {cardBrand === 'amex' && <AmexSVG />}
+                              </span>
+                            </div>
+                            <div className="cc-number">
+                              {paymentDetails.cardNumber
+                                ? fmtCard(paymentDetails.cardNumber, cardBrand)
+                                : cardBrand === 'amex'
+                                  ? '•••• •••••• •••••'
+                                  : '•••• •••• •••• ••••'}
+                            </div>
+                            <div className="cc-bottom">
+                              <div style={{ flex: 1 }}>
+                                <div className="cc-label">Card Holder</div>
+                                <div className="cc-value" style={{ textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
+                                  {paymentDetails.cardHolder || 'YOUR NAME'}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="cc-label">Expires</div>
+                                <div className="cc-value">{paymentDetails.expiry || 'MM / YY'}</div>
+                              </div>
                             </div>
                           </div>
-                          <div>
-                            <div className="cc-label">Expires</div>
-                            <div className="cc-value">{paymentDetails.expiry || 'MM / YY'}</div>
+
+                          {/* Back Face */}
+                          <div className="cc-card-back">
+                            <div className="cc-card-back-mag"></div>
+                            <div className="cc-card-back-mag-stripe"></div>
+                            <div className="cc-card-back-sig-area">
+                              <div className="cc-card-back-sig"></div>
+                              <div className="cc-card-back-cvv-box">
+                                {paymentDetails.cvv ? '•'.repeat(paymentDetails.cvv.length) : 'CVV'}
+                              </div>
+                            </div>
+                            <div className="cc-card-back-note">
+                              This card is property of issuer bank. Authorized signature required. If found, please return to issuer. Securing transaction through MIRU.
+                            </div>
+                          </div>
+
+                        </div>
+                      </div>
+
+                      {/* Inputs Column */}
+                      <div className="cc-inputs-col" style={{ flex: 1 }}>
+                        <div className="form-field" style={{ marginBottom: '0.75rem' }}>
+                          <label>Card Number</label>
+                          <input
+                            placeholder={cardBrand === 'amex' ? '1234 567890 12345' : '1234 5678 9012 3456'}
+                            value={fmtCard(paymentDetails.cardNumber, cardBrand)}
+                            onChange={e => setPaymentDetails({ ...paymentDetails, cardNumber: e.target.value.replace(/\s/g, '') })}
+                            onFocus={() => setCardFlipped(false)}
+                            maxLength={cardBrand === 'amex' ? 17 : 19}
+                            style={{ fontFamily: "'DM Mono', monospace", letterSpacing: '0.06em' }}
+                          />
+                        </div>
+
+                        <div className="form-field" style={{ marginBottom: '0.75rem' }}>
+                          <label>Cardholder Name</label>
+                          <input
+                            placeholder="Jane Doe"
+                            value={paymentDetails.cardHolder || ''}
+                            onChange={e => setPaymentDetails({ ...paymentDetails, cardHolder: e.target.value })}
+                            onFocus={() => setCardFlipped(false)}
+                          />
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                          <div className="form-field" style={{ marginBottom: 0 }}>
+                            <label>Expiry Date</label>
+                            <input
+                              placeholder="MM / YY"
+                              value={paymentDetails.expiry || ''}
+                              onChange={e => handleExpiryChange(e.target.value)}
+                              onFocus={() => setCardFlipped(false)}
+                              maxLength={7}
+                              style={{ fontFamily: "'DM Mono', monospace" }}
+                            />
+                          </div>
+                          <div className="form-field" style={{ marginBottom: 0 }}>
+                            <label>CVV <span style={{ fontSize: '0.7rem', color: 'var(--ink-soft)' }}>{cardBrand === 'amex' ? '4 digits' : '3 digits'}</span></label>
+                            <input
+                              placeholder={cardBrand === 'amex' ? '••••' : '•••'}
+                              type="password"
+                              value={paymentDetails.cvv || ''}
+                              onChange={e => setPaymentDetails({ ...paymentDetails, cvv: e.target.value.replace(/\D/g, '') })}
+                              onFocus={() => setCardFlipped(true)}
+                              maxLength={cardBrand === 'amex' ? 4 : 3}
+                              style={{ fontFamily: "'DM Mono', monospace" }}
+                            />
                           </div>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Back Face */}
-                      <div className="cc-card-back">
-                        <div className="cc-card-back-mag"></div>
-                        <div className="cc-card-back-sig-area">
-                          <div className="cc-card-back-sig"></div>
-                          <div className="cc-card-back-cvv-box">
-                            {paymentDetails.cvv ? '•'.repeat(paymentDetails.cvv.length) : 'CVV'}
-                          </div>
+                    <div className="co-accepted-cards">
+                      <span>Accepted cards:</span>
+                      <VisaSVG /><McSVG /><RuPaySVG /><AmexSVG />
+                    </div>
+                  </div>
+                )}
+
+                {/* UPI ID (VPA) */}
+                {payment === 'upi' && (
+                  <div className="co-card-area">
+                    <div className="upi-payment-compact-row">
+                      <div className="upi-input-col">
+                        <div className="upi-id-input-wrapper">
+                          <input
+                            placeholder="yourname@upi"
+                            value={paymentDetails.upiId || ''}
+                            onChange={e => {
+                              setPaymentDetails({ ...paymentDetails, upiId: e.target.value });
+                              setUpiVerified(false);
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="btn-verify-upi"
+                            onClick={handleUpiVerify}
+                            disabled={upiVerifying || !paymentDetails.upiId}
+                          >
+                            {upiVerifying ? 'Verifying...' : upiVerified ? 'Verified ✓' : 'Verify'}
+                          </button>
                         </div>
-                        <div className="cc-card-back-note">
-                          This card is property of issuer bank. Authorized signature required. If found, please return to issuer. Securing transaction through MIRU.
+                        <div className="upi-handles-grid">
+                          {['@okhdfcbank', '@okicici', '@ybl', '@paytm', '@upi'].map(handle => (
+                            <span
+                              key={handle}
+                              className="upi-handle-tag"
+                              onClick={() => appendUpiHandle(handle)}
+                            >
+                              {handle}
+                            </span>
+                          ))}
                         </div>
                       </div>
 
-                    </div>
-                  </div>
-
-                  <div className="form-field" style={{ marginBottom: '0.75rem' }}>
-                    <label>Card Number</label>
-                    <input
-                      placeholder={cardBrand === 'amex' ? '1234 567890 12345' : '1234 5678 9012 3456'}
-                      value={fmtCard(paymentDetails.cardNumber, cardBrand)}
-                      onChange={e => setPaymentDetails({ ...paymentDetails, cardNumber: e.target.value.replace(/\s/g, '') })}
-                      onFocus={() => setCardFlipped(false)}
-                      maxLength={cardBrand === 'amex' ? 17 : 19}
-                      style={{ fontFamily: "'DM Mono', monospace", letterSpacing: '0.06em' }}
-                    />
-                  </div>
-
-                  <div className="form-field" style={{ marginBottom: '0.75rem' }}>
-                    <label>Cardholder Name</label>
-                    <input
-                      placeholder="Jane Doe"
-                      value={paymentDetails.cardHolder || ''}
-                      onChange={e => setPaymentDetails({ ...paymentDetails, cardHolder: e.target.value })}
-                      onFocus={() => setCardFlipped(false)}
-                    />
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div className="form-field" style={{ marginBottom: 0 }}>
-                      <label>Expiry Date</label>
-                      <input
-                        placeholder="MM / YY"
-                        value={paymentDetails.expiry || ''}
-                        onChange={e => handleExpiryChange(e.target.value)}
-                        onFocus={() => setCardFlipped(false)}
-                        maxLength={7}
-                        style={{ fontFamily: "'DM Mono', monospace" }}
-                      />
-                    </div>
-                    <div className="form-field" style={{ marginBottom: 0 }}>
-                      <label>CVV <span style={{ fontSize: '0.7rem', color: 'var(--ink-soft)' }}>{cardBrand === 'amex' ? '4 digits' : '3 digits'}</span></label>
-                      <input
-                        placeholder={cardBrand === 'amex' ? '••••' : '•••'}
-                        type="password"
-                        value={paymentDetails.cvv || ''}
-                        onChange={e => setPaymentDetails({ ...paymentDetails, cvv: e.target.value.replace(/\D/g, '') })}
-                        onFocus={() => setCardFlipped(true)}
-                        maxLength={cardBrand === 'amex' ? 4 : 3}
-                        style={{ fontFamily: "'DM Mono', monospace" }}
-                      />
-                    </div>
-                  </div>
-                  <div className="co-accepted-cards">
-                    <span>Accepted cards:</span>
-                    <VisaSVG /><McSVG /><RuPaySVG /><AmexSVG />
-                  </div>
-                </div>
-              )}
-
-              {/* UPI ID (VPA) */}
-              {payment === 'upi' && (
-                <div className="co-card-area">
-                  <div className="upi-id-input-wrapper">
-                    <input
-                      placeholder="yourname@upi"
-                      value={paymentDetails.upiId || ''}
-                      onChange={e => {
-                        setPaymentDetails({ ...paymentDetails, upiId: e.target.value });
-                        setUpiVerified(false);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="btn-verify-upi"
-                      onClick={handleUpiVerify}
-                      disabled={upiVerifying || !paymentDetails.upiId}
-                    >
-                      {upiVerifying ? 'Verifying...' : upiVerified ? 'Verified ✓' : 'Verify'}
-                    </button>
-                  </div>
-                  <div className="upi-handles-grid">
-                    {['@okhdfcbank', '@okicici', '@ybl', '@paytm', '@upi'].map(handle => (
-                      <span
-                        key={handle}
-                        className="upi-handle-tag"
-                        onClick={() => appendUpiHandle(handle)}
-                      >
-                        {handle}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="upi-apps-grid">
-                    {[
-                      { name: 'Google Pay', color: '#4285F4', initial: 'G' },
-                      { name: 'PhonePe', color: '#5f259f', initial: 'P' },
-                      { name: 'Paytm', color: '#00baf2', initial: 'Py' },
-                      { name: 'BHIM', color: '#e27d2c', initial: 'B' }
-                    ].map(app => (
-                      <button
-                        key={app.name}
-                        type="button"
-                        className="upi-app-btn"
-                        onClick={() => simulateAppRequest(app.name)}
-                      >
-                        <span className="upi-app-logo" style={{ backgroundColor: app.color }}>{app.initial}</span>
-                        <span>{app.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* UPI QR (GPay Template) */}
-              {payment === 'upi_qr' && (
-                <div className="co-card-area">
-                  <div className="gpay-qr-wrapper">
-                    <div className="gpay-qr-header">
-                      <div className="gpay-profile-icon">
-                        <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', fontFamily: 'sans-serif' }}>JV</span>
+                      <div className="upi-apps-col" style={{ borderLeft: '1px dashed var(--border)', paddingLeft: '1.5rem' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-soft)', marginBottom: '0.5rem' }}>Pay directly via App:</div>
+                        <div className="upi-apps-grid" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
+                          {[
+                            { name: 'Google Pay', color: '#4285F4', initial: 'G' },
+                            { name: 'PhonePe', color: '#5f259f', initial: 'P' },
+                            { name: 'Paytm', color: '#00baf2', initial: 'Py' },
+                            { name: 'BHIM', color: '#e27d2c', initial: 'B' }
+                          ].map(app => (
+                            <button
+                              key={app.name}
+                              type="button"
+                              className="upi-app-btn"
+                              onClick={() => simulateAppRequest(app.name)}
+                            >
+                              <span className="upi-app-logo" style={{ backgroundColor: app.color }}>{app.initial}</span>
+                              <span>{app.name}</span>
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      <div className="gpay-profile-name">Jatin Varma</div>
                     </div>
+                  </div>
+                )}
 
-                    {qrSecondsLeft === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '1rem' }}>
-                        <div style={{ color: 'var(--red)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>QR Code expired.</div>
-                        <button
-                          type="button"
-                          className="btn btn-outline"
-                          style={{ fontSize: '0.8rem' }}
-                          onClick={() => setQrSecondsLeft(300)}
-                        >
-                          Regenerate QR
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="gpay-qr-card">
+                {/* UPI QR (GPay Template) */}
+                {payment === 'upi_qr' && (
+                  <div className="co-card-area">
+                    <div className="gpay-qr-wrapper" style={{ display: 'block', padding: '1.25rem' }}>
+                      <div className="upi-qr-compact-row">
+                        <div className="gpay-qr-card" style={{ flexShrink: 0, margin: '0 auto' }}>
                           <div className="gpay-qr-box">
                             <svg width="150" height="150" viewBox="0 0 150 150">
                               <rect width="150" height="150" fill="#ffffff" />
@@ -767,71 +820,98 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
                           <div className="gpay-qr-upi-id">UPI ID: vjatin395@okicici</div>
                         </div>
 
-                        <div className="gpay-qr-footer-text">Scan to pay with any UPI app</div>
+                        <div className="upi-qr-details-col" style={{ flex: 1, paddingLeft: '0.5rem' }}>
+                          <div className="gpay-qr-header" style={{ justifyContent: 'flex-start', marginBottom: '0.75rem' }}>
+                            <div className="gpay-profile-icon">
+                              <span style={{ color: '#fff', fontSize: '0.85rem', fontWeight: 'bold', fontFamily: 'sans-serif' }}>JV</span>
+                            </div>
+                            <div className="gpay-profile-name" style={{ fontSize: '1.05rem' }}>Jatin Varma</div>
+                          </div>
 
-                        <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.8rem', color: 'var(--red)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            ⏱️ QR expires in: {Math.floor(qrSecondsLeft / 60)}:{(qrSecondsLeft % 60).toString().padStart(2, '0')}
-                          </span>
+                          <div className="gpay-qr-upi-id" style={{ textAlign: 'left', marginTop: '0.25rem' }}>UPI ID: vjatin395@okicici</div>
+                          <div className="gpay-qr-footer-text" style={{ textAlign: 'left', marginTop: '0.5rem', fontSize: '0.8rem' }}>Scan to pay with any UPI app</div>
 
-                          <button
-                            type="button"
-                            className="upi-qr-sim-btn"
-                            onClick={handleQrSimulatePayment}
-                          >
-                            Simulate Scan &amp; Pay Completion
-                          </button>
+                          {qrSecondsLeft === 0 ? (
+                            <div style={{ textAlign: 'left', marginTop: '0.75rem' }}>
+                              <div style={{ color: 'var(--red)', fontSize: '0.9rem', marginBottom: '0.5rem', fontWeight: 600 }}>QR Code expired.</div>
+                              <button
+                                type="button"
+                                className="btn btn-outline"
+                                style={{ fontSize: '0.8rem' }}
+                                onClick={() => setQrSecondsLeft(300)}
+                              >
+                                Regenerate QR
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--red)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                ⏱️ QR expires in: {Math.floor(qrSecondsLeft / 60)}:{(qrSecondsLeft % 60).toString().padStart(2, '0')}
+                              </span>
+
+                              <button
+                                type="button"
+                                className="upi-qr-sim-btn"
+                                style={{ marginTop: 0 }}
+                                onClick={handleQrSimulatePayment}
+                              >
+                                Simulate Scan &amp; Pay Completion
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* PayPal */}
-              {payment === 'paypal' && (
-                <div className="co-card-area" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                    <PayPalSVG />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Pay with PayPal</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>Safe. Fast. Secure.</div>
+                      </div>
                     </div>
                   </div>
+                )}
 
-                  <div className="paypal-btn-group">
-                    <button
-                      type="button"
-                      className="paypal-branded-btn pp-yellow"
-                      onClick={handlePayPalButtonClick}
-                    >
-                      <PayPalSVG />
-                    </button>
-                    <button
-                      type="button"
-                      className="paypal-branded-btn pp-black"
-                      onClick={handlePayPalButtonClick}
-                    >
-                      Debit or Credit Card
-                    </button>
-                  </div>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', textAlign: 'center', marginTop: '0.25rem' }}>
-                    Click either button to open the PayPal secure payment checkout.
-                  </p>
-                </div>
-              )}
+                {/* PayPal */}
+                {payment === 'paypal' && (
+                  <div className="co-card-area">
+                    <div className="paypal-compact-row">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <PayPalSVG />
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Pay with PayPal</div>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>Safe. Fast. Secure.</div>
+                        </div>
+                      </div>
 
-              {/* COD */}
-              {payment === 'cod' && (
-                <div className="co-card-area co-alt-pay">
-                  <CodSVG />
-                  <div>
-                    <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Cash on Delivery</div>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>Pay in cash when your order arrives. Available on orders up to ₹10,000.</div>
+                      <div className="paypal-btn-group" style={{ marginTop: 0 }}>
+                        <button
+                          type="button"
+                          className="paypal-branded-btn pp-yellow"
+                          onClick={handlePayPalButtonClick}
+                        >
+                          <PayPalSVG />
+                        </button>
+                        <button
+                          type="button"
+                          className="paypal-branded-btn pp-black"
+                          onClick={handlePayPalButtonClick}
+                        >
+                          Debit or Credit Card
+                        </button>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', textAlign: 'center', marginTop: '0.75rem' }}>
+                      Click either button to open the PayPal secure payment checkout.
+                    </p>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+
+                {/* COD */}
+                {payment === 'cod' && (
+                  <div className="co-card-area co-alt-pay">
+                    <CodSVG />
+                    <div>
+                      <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>Cash on Delivery</div>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>Pay in cash when your order arrives. Available on orders up to ₹10,000.</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Trust badges */}
@@ -894,6 +974,10 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>
                   Processing…
+                </span>
+              ) : activeStep === 1 ? (
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'center' }}>
+                  Proceed to Payment
                 </span>
               ) : payment === 'paypal' ? (
                 <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', justifyContent: 'center' }}>
@@ -1117,26 +1201,6 @@ export default function CheckoutPage({ cart, submitCheckout, token, onBack }) {
               <span>🔒 Verified by Visa / Mastercard Identity Check Secure</span>
             </div>
 
-          </div>
-        </div>
-      )}
-
-      {/* Payment details error popup modal */}
-      {paymentError && (
-        <div className="paypal-modal-overlay" style={{ zIndex: 300 }}>
-          <div className="paypal-modal" style={{ width: '360px', padding: '2rem', textAlign: 'center', borderRadius: '16px' }}>
-            <div style={{ fontSize: '3.5rem', color: 'var(--red)', marginBottom: '0.75rem' }}>✕</div>
-            <h3 style={{ fontWeight: '700', fontSize: '1.2rem', marginBottom: '0.75rem', color: 'var(--ink)' }}>Payment Details Error</h3>
-            <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '1.5rem' }}>
-              {paymentError}
-            </p>
-            <button 
-              className="btn btn-primary" 
-              style={{ width: '100%', padding: '12px', borderRadius: '8px' }} 
-              onClick={() => setPaymentError(null)}
-            >
-              Okay
-            </button>
           </div>
         </div>
       )}
