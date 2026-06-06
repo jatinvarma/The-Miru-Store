@@ -1787,6 +1787,9 @@ footer {
 }
 
 .account-nav button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   text-align: left;
   background: none;
   border: none;
@@ -1798,6 +1801,20 @@ footer {
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
+}
+
+.account-nav button svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.account-nav button:hover svg {
+  transform: scale(1.05);
 }
 
 .account-nav button:hover {
@@ -1950,6 +1967,126 @@ footer {
   font-family: 'Inter', sans-serif;
   font-size: 1.75rem;
   font-weight: 300;
+}
+
+/* Sidebar Profile Header Summary */
+.account-sidebar-profile-card {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.account-sidebar-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 auto 0.75rem;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+}
+
+.account-sidebar-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-sidebar-email {
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Collapsible Orders Styles */
+.premium-order-card {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-order-card.collapsed {
+  padding: 1.25rem 1.75rem;
+}
+
+.premium-order-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
+}
+
+.order-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.order-summary-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.expand-chevron {
+  transition: transform 0.3s ease;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.premium-order-expandable-content {
+  border-top: 1px dashed var(--border);
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  animation: fadeInDown 0.3s ease both;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Settings Forms side-by-side */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* NEWSLETTER */
