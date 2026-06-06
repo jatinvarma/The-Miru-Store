@@ -75,13 +75,20 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
         <span style={{ fontSize: '0.7rem', color: 'var(--ink-soft)' }}>{products.length} items</span>
       </div>
       <div className="sticky-filters">
-        <div className="search-bar" style={{ marginBottom: '1rem' }}>
-          <div 
+        {/* Row 1: Search + Sort */}
+        <div className="filter-top-row">
+          <div
             className="search-bar-wrapper"
             onMouseLeave={() => setShowSuggestions(false)}
           >
+            <span className="search-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </span>
             <input
-              placeholder="Search products..."
+              className="search-input-field"
+              placeholder="Search products…"
               value={search}
               onChange={e => {
                 setSearch(e.target.value);
@@ -89,11 +96,18 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
               }}
               onFocus={() => setShowSuggestions(true)}
             />
+            {search && (
+              <button className="search-clear-btn" onClick={() => { setSearch(''); setSuggestions([]); }}>
+                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            )}
             {showSuggestions && suggestions.length > 0 && (
               <div className="search-suggestions-dropdown">
                 {suggestions.map(s => (
-                  <div 
-                    key={s.id} 
+                  <div
+                    key={s.id}
                     className="suggestion-item"
                     onClick={() => {
                       setDetailProduct(s);
@@ -111,15 +125,20 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
               </div>
             )}
           </div>
-          <select value={sort} onChange={e => setSort(e.target.value)}>
-            <option value="default">Featured</option>
-            <option value="price_asc">Price ↑</option>
-            <option value="price_desc">Price ↓</option>
-            <option value="rating">Top Rated</option>
-          </select>
+          <div className="filter-sort-group">
+            <label className="filter-sort-label">Sort</label>
+            <select className="filter-sort-select" value={sort} onChange={e => setSort(e.target.value)}>
+              <option value="default">Featured</option>
+              <option value="price_asc">Price: Low → High</option>
+              <option value="price_desc">Price: High → Low</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', flexWrap: 'wrap', paddingBottom: '1rem' }}>
-          <div className="filters" style={{ marginBottom: 0 }}>
+
+        {/* Row 2: Category pills + Price range */}
+        <div className="filter-bottom-row">
+          <div className="filters">
             {cats.map(c => (
               <button
                 key={c}
@@ -130,8 +149,8 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
               </button>
             ))}
           </div>
-          <div className="price-range-wrap" style={{ marginBottom: 0, gap: '1rem' }}>
-            <span>Max Price:</span>
+          <div className="price-range-wrap">
+            <span className="price-range-label">Max</span>
             <input
               type="range"
               min="1000"
@@ -140,7 +159,7 @@ export default function Products({ token, cart, onAddToCart, onUpdateCartQty, on
               value={maxPrice}
               onChange={e => setMaxPrice(e.target.value)}
             />
-            <span>₹{maxPrice}</span>
+            <span className="price-range-value">₹{Number(maxPrice).toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>

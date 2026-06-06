@@ -92,18 +92,59 @@ export default function About({ onExplore }) {
           </div>
           <div className="founders-grid">
             <div className="founder-card">
+              <div className="founder-img-wrapper founder-avatar-only">
+                <div className="founder-avatar-initials">JV</div>
+              </div>
               <div className="founder-info">
                 <h3>Jatin Kumar Varma</h3>
-                <span className="founder-role">Co-Founder & Creative Director</span>
-                <p>Jatin oversees our curations. With a background in architecture, he is drawn to architectural forms, raw textures, and silent aesthetics.</p>
+                <span className="founder-role">Co-Founder &amp; Creative Director</span>
+                <p>Jatin oversees our curations. With a background in architecture, he is drawn to raw textures, geometric forms, and silent aesthetics that stand the test of time.</p>
+                <div className="founder-tags">
+                  <span className="founder-tag">Design</span>
+                  <span className="founder-tag">Architecture</span>
+                  <span className="founder-tag">Curation</span>
+                </div>
               </div>
             </div>
             <div className="founder-card">
+              <div className="founder-img-wrapper founder-avatar-only">
+                <div className="founder-avatar-initials">SB</div>
+              </div>
               <div className="founder-info">
                 <h3>S Baba Fakruddin</h3>
-                <span className="founder-role">Co-Founder & Head of Curation</span>
-                <p>Baba works closely with our global artisan network. He travels to traditional woodshops and ceramic kilns to source authentic pieces.</p>
+                <span className="founder-role">Co-Founder &amp; Head of Curation</span>
+                <p>Baba works closely with our global artisan network. He travels to traditional woodshops and ceramic kilns to source authentic pieces with exceptional provenance.</p>
+                <div className="founder-tags">
+                  <span className="founder-tag">Sourcing</span>
+                  <span className="founder-tag">Artisans</span>
+                  <span className="founder-tag">Materials</span>
+                </div>
               </div>
+            </div>
+          </div>
+
+          {/* Brand Timeline */}
+          <div className="brand-timeline">
+            <h3 className="brand-timeline-heading">Our Journey</h3>
+            <div className="brand-timeline-list">
+              {[
+                { year: '2018', label: 'The Idea', desc: 'Jatin & Baba meet at a design fair in Tokyo and realize they share the same obsession with purposeful objects.' },
+                { year: '2020', label: 'First Collection', desc: 'MIRU launches with 12 hand-selected pieces from artisans across Japan, Portugal, and India.' },
+                { year: '2022', label: 'Studio Opens', desc: 'A restored machiya in Kyoto\'s Higashiyama district becomes our first physical showroom.' },
+                { year: '2024', label: 'Global Reach', desc: 'We now ship to 45 countries, partnering with 200+ independent makers and ethical workshops worldwide.' },
+              ].map((item, i) => (
+                <div className="brand-timeline-item" key={item.year}>
+                  <div className="brand-timeline-marker">
+                    <div className="brand-timeline-dot" />
+                    {i < 3 && <div className="brand-timeline-connector" />}
+                  </div>
+                  <div className="brand-timeline-content">
+                    <span className="brand-timeline-year">{item.year}</span>
+                    <h4 className="brand-timeline-label">{item.label}</h4>
+                    <p className="brand-timeline-desc">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

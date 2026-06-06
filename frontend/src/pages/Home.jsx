@@ -1,6 +1,8 @@
 import React from 'react';
 import Hero from '../components/Hero';
 import CategoryShowcase from '../components/CategoryShowcase';
+import BrandStory from '../components/BrandStory';
+import TopPicks from '../components/TopPicks';
 import Products from '../components/Products';
 import Newsletter from '../components/Newsletter';
 import Contact from './Contact';
@@ -19,6 +21,16 @@ export default function Home({ token, cart, onAddToCart, onUpdateCartQty, onAuth
     <div className="home-page">
       <Hero onShop={scrollShopIntoView} />
       <CategoryShowcase onCategorySelect={handleCategorySelect} />
+      <BrandStory />
+      <TopPicks
+        token={token}
+        cart={cart}
+        onAddToCart={onAddToCart}
+        onUpdateCartQty={onUpdateCartQty}
+        onAuthRequired={onAuthRequired}
+        wishIds={wishIds}
+        onWishToggle={onWishToggle}
+      />
       <Products
         token={token}
         cart={cart}
@@ -35,3 +47,4 @@ export default function Home({ token, cart, onAddToCart, onUpdateCartQty, onAuth
     </div>
   );
 }
+
