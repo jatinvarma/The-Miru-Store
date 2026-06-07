@@ -1,19 +1,19 @@
 :root {
-  --bg: #FAF8F5;
-  --bg2: #F1ECE4;
-  --ink: #181512;
-  --ink-soft: #70655B;
+  --bg: #E1E6ED;
+  --bg2: #CFD7E3;
+  --ink: #1A2332;
+  --ink-soft: #5C6B7F;
   --accent: #9A7B56;
   --accent-light: #BCA380;
-  --cream: #FFFFFF;
-  --border: #E8E2D9;
+  --cream: #F4F7FA;
+  --border: #C6D1E0;
   --red: #C85A5A;
   --green: #5F8C72;
   --gold: #9A7B56;
-  --glass-bg: rgba(250, 248, 245, 0.85);
-  --glass-border: rgba(232, 226, 217, 0.6);
-  --shadow-sm: 0 2px 4px rgba(24, 21, 18, 0.02), 0 1px 2px rgba(24, 21, 18, 0.03);
-  --shadow-lg: 0 20px 40px -15px rgba(24, 21, 18, 0.06), 0 8px 16px -8px rgba(24, 21, 18, 0.04);
+  --glass-bg: rgba(225, 230, 237, 0.85);
+  --glass-border: rgba(198, 209, 224, 0.6);
+  --shadow-sm: 0 2px 4px rgba(26, 35, 50, 0.02), 0 1px 2px rgba(26, 35, 50, 0.03);
+  --shadow-lg: 0 20px 40px -15px rgba(26, 35, 50, 0.06), 0 8px 16px -8px rgba(26, 35, 50, 0.04);
   --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -684,8 +684,8 @@ html[data-theme='dark'] .filter-btn.active {
 
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 3rem 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 2rem 1.5rem;
 }
 
 .product-card {
@@ -778,9 +778,9 @@ html[data-theme='dark'] .filter-btn.active {
 
 .product-name {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 1.45rem;
+  font-size: 1.25rem;
   font-weight: 500;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.3rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

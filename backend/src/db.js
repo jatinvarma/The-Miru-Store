@@ -233,6 +233,123 @@ if (existingProducts.count === 0) {
       ]),
       'Home', 
       12, 0, 0, null
+    ],
+    [
+      'Silk Sleep Mask',
+      '100% mulberry silk sleep mask filled with silk floss',
+      2200,
+      '/img/silk_mask.jpg',
+      JSON.stringify(['/img/silk_mask.jpg']),
+      'Wellness',
+      30, 1, 0, null
+    ],
+    [
+      'Acoustic Wood Panel',
+      'Oak veneer acoustic slat panel with recycled felt backing',
+      14500,
+      '/img/acoustic_panel.jpg',
+      JSON.stringify(['/img/acoustic_panel.jpg']),
+      'Workspace',
+      10, 0, 0, null
+    ],
+    [
+      'Solid Brass Incense Burner',
+      'Minimalist brass bowl incense burner with sand base',
+      3800,
+      '/img/brass_burner.jpg',
+      JSON.stringify(['/img/brass_burner.jpg']),
+      'Wellness',
+      25, 0, 1, 3200
+    ],
+    [
+      'Stoneware Serving Bowl',
+      'Large hand-glazed stoneware bowl perfect for family-style dining',
+      5200,
+      'https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=400',
+      JSON.stringify(['https://images.unsplash.com/photo-1610701596007-11502861dcfa?w=400']),
+      'Kitchen',
+      15, 1, 0, null
+    ],
+    [
+      'Linen Throw Pillow',
+      '100% heavy linen cushion cover with premium duck feather insert',
+      4500,
+      '/img/linen_pillow.jpg',
+      JSON.stringify(['/img/linen_pillow.jpg']),
+      'Home',
+      20, 0, 0, null
+    ],
+    [
+      'Merino Wool Socks',
+      'Thick, insulating merino wool socks in charcoal grey',
+      1400,
+      'https://images.unsplash.com/photo-1582966772680-860e372bb558?w=400',
+      JSON.stringify(['https://images.unsplash.com/photo-1582966772680-860e372bb558?w=400']),
+      'Apparel',
+      50, 0, 1, 1120
+    ],
+    [
+      'Leather Tech Organizer',
+      'Genuine leather roll-up pouch for cables, chargers, and SD cards',
+      4900,
+      '/img/leather_organizer.jpg',
+      JSON.stringify(['/img/leather_organizer.jpg']),
+      'Workspace',
+      18, 1, 0, null
+    ],
+    [
+      'Japanese Matcha Whisk',
+      'Traditional 80-prong bamboo chasen whisk for perfect matcha froth',
+      1800,
+      '/img/matcha_whisk.jpg',
+      JSON.stringify(['/img/matcha_whisk.jpg']),
+      'Kitchen',
+      35, 1, 0, null
+    ],
+    [
+      'Travertine Coaster Set',
+      'Set of 4 raw, unfilled natural travertine stone coasters',
+      3100,
+      '/img/travertine_coasters.jpg',
+      JSON.stringify(['/img/travertine_coasters.jpg']),
+      'Home',
+      40, 0, 0, null
+    ],
+    [
+      'Portable Espresso Maker',
+      'Hand-powered portable espresso machine for travel and camping',
+      9500,
+      '/img/espresso_maker.jpg',
+      JSON.stringify(['/img/espresso_maker.jpg']),
+      'Kitchen',
+      12, 0, 1, 7999
+    ],
+    [
+      'Rattan Storage Basket',
+      'Hand-woven natural rattan basket with dual handles',
+      3600,
+      '/img/rattan_basket.jpg',
+      JSON.stringify(['/img/rattan_basket.jpg']),
+      'Home',
+      30, 0, 0, null
+    ],
+    [
+      'Oak Wood Bench',
+      'Minimalist solid oak entryway bench with tapered wooden legs',
+      21000,
+      '/img/oak_bench.jpg',
+      JSON.stringify(['/img/oak_bench.jpg']),
+      'Furniture',
+      8, 1, 0, null
+    ],
+    [
+      'USB Rechargeable Lighter',
+      'Sleek zinc alloy arc lighter with flexible neck and battery indicators',
+      2900,
+      '/img/usb_lighter.jpg',
+      JSON.stringify(['/img/usb_lighter.jpg']),
+      'Tech',
+      25, 0, 0, null
     ]
   ];
   
